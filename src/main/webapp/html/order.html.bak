@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container1 {
+            margin: 20px;
+        }
+
+        .container1 button, .container1 a {
+            text-decoration: none;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .container1 button:hover {
+            background-color: #0056b3;
+        }
+
+        #addressList .address-item {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .address-item .default-tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #28a745;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .form-container1 {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .form-container1 h2 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        .form-container1 .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .form-container1 .form-row label {
+            width: 30%;
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .form-container1 .form-row input, .form-container1 .form-row select {
+            width: 70%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-container1 .form-row.full-width {
+            flex-basis: 100%;
+        }
+
+        .form-container1 .form-row input:focus, .form-container1 .form-row select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .form-container1 button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .form-container1 button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container1" v-if="!isLogin">
+            <h1>未登录，无记录</h1>
+        </div>
+        <div class="container1" v-else>
+            <div  v-if="orderList.length<=0">
+                <h1>没有历史订单</h1>
+            </div>
+            <div id="addressList" v-if="orderList.length>0">
+                <!-- Address items will be injected here by JavaScript -->
+                <div class="address-item" v-for="(item,index) in orderList">
+                    <p>订单编号: {{item.id}}</p>
+                    <p>总价: {{item.total_fee}}元</p>
+                    <p>创建时间: {{item.create_time}}</p>
+                    <p>手机号码: {{item.mobile}}</p>
+                    <p>收货人: {{item.contact}}</p>
+                    <p>地址: {{item.address}}</p>
+                    <div class="default-tag" v-if="item.status == '1'">未支付</div>
+                    <div class="default-tag" v-if="item.status == '2'">已支付，待发货</div>
+                    <div class="default-tag" v-if="item.status == 3">已发货,未确认</div>
+                    <div class="default-tag" v-if="item.status == 4">确认收货，交易成功</div>
+                    <div class="default-tag" v-if="item.status == 5" style="background-color: chocolate">等待退货申请</div>
+                    <div class="default-tag" v-if="item.status == 6" style="background-color: green">退货申请通过</div>
+                    <div class="default-tag" v-if="item.status == 7" style="background-color: red">退货申请不通过</div>
+                    <div class="default-tag" v-if="item.status == 8" style="background-color: red">已取消</div>
+                    <p>商品：</p>                                                                              <!--订单id    商品id-->
+                    <p v-for="(i,j) in item.orderDetailList">{{i.num}} x {{i.name}}<button @click="showForm('1',item.id,i.item_id)" v-if="i.return_status==1 && item.status<=4 && item.status>1">退货申请</button></p>
+                    <button @click="get(item.id)" v-if="item.status==3">确认收货</button>
+                    <button @click="showForm('2',item.id)" v-if="item.status==1">取消订单</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="addressForm" class="overlay">
+            <div class="form-container1">
+                <form id="form" class="form-container1">
+                    <h2 v-if="op=='1'">申请退货</h2>
+                    <h2 v-if="op=='2'">取消订单</h2>
+                    <span class="close-btn" @click="closeForm()">&times;</span>
+
+                    <div class="form-row full-width" v-if="op=='1'">
+                        <label for="reason">退货原因：</label>
+                        <input type="text" id="reason" required v-model.trim="reason">
+                    </div>
+
+                    <div class="form-row" v-if="op=='1'">
+                        <label for="number">快递单号：</label>
+                        <input type="text" id="number" required v-model.trim="id">
+                    </div>
+
+                    <div class="form-row" v-if="op=='1'">
+                        <label for="region">快递：</label>
+                        <select id="region" v-model="tracking_company" required>
+                            <option value="">--请选择--</option>
+                            <option value="顺丰">顺丰</option>
+                            <option value="邮政">邮政</option>
+                            <option value="圆通">圆通</option>
+                            <option value="申通">申通</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row full-width" v-if="op=='2'">
+                        <label for="cancel">取消原因：</label>
+                        <input type="text" id="cancel" v-model="reason">
+                    </div>
+
+                    <button type="button" @click="ret()" v-if="op=='1'">申请退货</button>
+                    <button type="button" @click="cancel()" v-if="op=='2'">取消订单</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+<script src="assets/js/axios-0.18.0.js"></script>
+<script src="assets/js/vue.js"></script>
+
+<script>
+
+    var app = new Vue({
+        el:"#app",
+        data:{
+            isLogin:false,
+            orderList:[],
+            op:'0',
+            reason:'',  //原因
+            id:'',  //快递单号
+            item_id:'',//订单id   已经反了，不改了
+            order_id:'',//商品id
+            tracking_company:'',//快递公司
+        },
+        computed: {
+        },
+        methods:{
+            cancel(){
+                if (this.reason==''){
+                    alert("填完整");
+                    return;
+                }
+                var params = new URLSearchParams();
+                params.append("reason",this.reason);
+                params.append("item_id",this.item_id);
+                axios.post("order.action?op=cancel",params).then(result=>{
+                    if (result.data.code==1){
+
+                    }else{
+                        alert(result.data.error);
+                    }
+                    this.reason='';
+                    this.id='';
+                    this.item_id='';
+                    this.closeForm();
+                    axios.all([this.checkLogin(),this.getOrder()]).then(axios.spread((result,result2)=>{
+                        if (result.data.code==0){
+                            this.isLogin = false;
+                            return;
+                        }else{
+                            this.isLogin = true;
+                        }
+                        if (result2.data.code==0){
+                            this.orderList = [];
+                        }else{
+                            this.orderList = result2.data.obj;
+                        }
+                    }))
+                })
+            },
+            //退货
+            ret(){
+                if (this.reason==''||this.id==''||this.item_id==''|| this.tracking_company==''||this.order_id==''){
+                    alert("请填写完整");
+                    return;
+                }
+                var params = new URLSearchParams();
+                params.append("tracking_number",this.id);//快递单号
+                params.append("reason",this.reason);//原因
+                params.append("order_id",this.item_id);//订单id
+                params.append("item_id",this.order_id);//商品id
+                params.append("tracking_company",this.tracking_company);//商品id
+                axios.post("order.action?op=ret",params).then(result=>{
+                    if (result.data.code==1){
+                        alert("申请成功")
+                    }else{
+                        alert(result.data.error);
+                    }
+                    this.reason='';
+                    this.id='';
+                    this.item_id='';
+                    this.tracking_company='';
+                    this.order_id='';
+                    this.closeForm();
+                    axios.all([this.checkLogin(),this.getOrder()]).then(axios.spread((result,result2)=>{
+                        if (result.data.code==0){
+                            this.isLogin = false;
+                            return;
+                        }else{
+                            this.isLogin = true;
+                        }
+                        if (result2.data.code==0){
+                            this.orderList = [];
+                        }else{
+                            this.orderList = result2.data.obj;
+                        }
+                    }))
+                })
+            },          //订单id，商品id     //已经反了就反了
+            showForm(id,item_id,order_id) {
+                document.getElementById('addressForm').style.display = 'flex';
+                if (id==1){
+                    this.op=1;
+                    this.item_id=item_id;
+                    this.order_id=order_id;
+                }  else if (id==2){
+                    this.op=2;
+                    this.item_id=item_id;
+                }
+            },
+            closeForm(){
+                document.getElementById('addressForm').style.display = 'none';
+                this.reason='';
+                this.id='';
+                this.item_id='';
+                this.tracking_company='';
+                this.order_id='';
+            },
+            //确认收货
+            get(id){
+                axios.post("order.action?op=get&id="+id).then(result=>{
+                    if (result.data.code==1){
+
+                    }else{
+
+                    }
+                    axios.all([this.checkLogin(),this.getOrder()]).then(axios.spread((result,result2)=>{
+                        if (result.data.code==0){
+                            this.isLogin = false;
+                            return;
+                        }else{
+                            this.isLogin = true;
+                        }
+                        if (result2.data.code==0){
+                            this.orderList = [];
+                        }else{
+                            this.orderList = result2.data.obj;
+                        }
+                    }))
+                })
+            },
+            checkLogin(){
+                return axios.post("user.action?op=checkLogin")
+            },
+            getOrder(){
+                return axios.post("order.action?op=getOrder");
+            }
+        },
+        mounted(){
+            axios.all([this.checkLogin(),this.getOrder()]).then(axios.spread((result,result2)=>{
+                if (result.data.code==0){
+                    this.isLogin = false;
+                    return;
+                }else{
+                    this.isLogin = true;
+                }
+                if (result2.data.code==0){
+                    this.orderList = [];
+                }else{
+                    this.orderList = result2.data.obj;
+                }
+            }))
+        }
+    });
+
+</script>
+</html>

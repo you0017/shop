@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css">
+    <script type="text/javascript" src="../../lib/layui/layui.js"></script>
+</head>
+<body>
+
+
+<form class="layui-form" action="">
+    <div class="layui-form">
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <input type="radio" name="form" value="form1" title="固定预警" lay-filter="formRadio">
+                <input type="radio" name="form" value="form2" title="动态预警" lay-filter="formRadio">
+            </div>
+        </div>
+    </div>
+
+
+    <div class="layui-form" id="form1" style="display:none;">
+        <!-- 表单1的内容 -->
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品编码</label>
+            <div class="layui-input-inline" style="width: 100px;">
+                <input type="number" name="id" placeholder="" autocomplete="off" class="layui-input" min="0"
+                       step="1" id="form1_id" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">库存下限</label>
+            <div class="layui-input-inline" style="width: 100px;">
+                <input type="number" name="form1_stock_down" placeholder="" autocomplete="off" class="layui-input" min="0"
+                       step="1">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">库存上限</label>
+            <div class="layui-input-inline" style="width: 100px;">
+                <input type="number" name="form1_stock_up" placeholder="" autocomplete="off" class="layui-input" min="0"
+                       step="1">
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-form" id="form2" style="display:none;">
+        <!-- 表单2的内容 -->
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品编码</label>
+            <div class="layui-input-inline" style="width: 100px;">
+                <input type="number" name="id" placeholder="" autocomplete="off" class="layui-input" min="0"
+                       step="1" id="form2_id" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <label class="layui-form-label">库存下限</label>
+            </div>
+            <div class="input-group">
+                <span class="input-group-text">最少可售</span>
+                <input type="text" name="form2_stock_down" placeholder="输入内容..." style="width: 60px;">
+                <span class="input-group-text">天*近3天日均销量</span>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <label class="layui-form-label">库存上限</label>
+            </div>
+            <div class="input-group">
+                <span class="input-group-text">最多可售</span>
+                <input type="text" name="form2_stock_up" placeholder="输入内容..." style="width: 60px;">
+                <span class="input-group-text">天*近3天日均销量</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="submitForm">提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+
+<script>
+
+    var initData;
+
+    // 设置预警弹出层的数据初始化
+    function initForm(data) {
+        console.log(data);
+        let jsonString = JSON.stringify(data);
+        initData = JSON.parse(jsonString);
+        document.getElementById("form2_id").value=initData.id;
+        document.getElementById("form1_id").value=initData.id;
+    }
+
+
+
+    layui.use(["element", "form", "laydate", "okLayer", "okUtils", "upload"], function () {
+        var form = layui.form;
+        var $ = layui.jquery;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        var upload = layui.upload
+        var element = layui.element;
+        var $ = layui.$;
+        var layer = layui.layer;
+
+        // 监听单选框点击事件
+        form.on('radio(formRadio)', function (data) {
+            if (data.value == 'form1') {
+                $("#form1").show();
+                $("#form2").hide();
+                $('input[name="form2"]').prop('checked', false);
+            } else if (data.value == 'form2') {
+                $("#form1").hide();
+                $("#form2").show();
+                $('input[name="form1"]').prop('checked', false);
+            }
+        });
+
+        // 监听提交
+        form.on("submit(submitForm)", function (data) {
+            console.log(data);
+            okUtils.ajax("../../inventory.action?op=editLimit", "post", data.field, true).done(function (response) {
+                okLayer.greenTickMsg("编辑成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        });
+
+
+
+
+
+
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>编辑商品</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--form表单-->
+    <form class="layui-form ok-form" lay-filter="filter">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">id</label>
+            <div class="layui-input-block">
+                <input type="text" name="id" placeholder="请输入账号" autocomplete="off" class="layui-input"
+                       lay-verify="required" readonly>
+                <!--                readonly-->
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">产品名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="name" placeholder="请输入产品名称" autocomplete="on" class="layui-input"
+                       lay-verify="required">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">产品价格</label>
+            <div class="layui-input-block">
+                <input type="text" name="price" placeholder="请输入产品价格" autocomplete="on" class="layui-input"
+                       lay-verify="required">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">产品库存</label>
+            <div class="layui-input-block">
+                <input type="text" name="stock" placeholder="请输入库存" autocomplete="on" class="layui-input"
+                       lay-verify="required">
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">状态</label>
+            <div class="layui-input-block">
+                <select name="status">
+                    <option value="1">启用</option>
+                    <option value="0">停用</option>
+                </select>
+                <!--	<input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" checked value="0">-->
+            </div>
+        </div>
+
+        <!--         图片-->
+        <div class="layui-form-item">
+            <label class="layui-form-label">产品logo</label>
+            <div class="layui-input-block">
+                <input style="display: none" name="pic" id="onePic">
+                <button type="button" class="layui-btn" id="ID-upload-demo-btn">
+                    <i class="layui-icon layui-icon-upload"></i> 产品logo
+                </button>
+                <div style="width: 132px;">
+                    <div class="layui-upload-list">
+                        <img class="layui-upload-img" id="ID-upload-demo-img" style="width: 100%; height: 92px;">
+                        <div id="ID-upload-demo-text"></div>
+                    </div>
+                    <div class="layui-progress layui-progress-big" lay-showPercent="yes" lay-filter="filter-demo">
+                        <div class="layui-progress-bar" lay-percent=""></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!--        <div class="layui-form-item">-->
+<!--            <div class="layui-input-block">-->
+<!--                <div class="layui-upload">-->
+<!--                    <button type="button" class="layui-btn" id="ID-upload-demo-btn-2">-->
+<!--                        <i class="layui-icon layui-icon-upload"></i> 附图上传-->
+<!--                    </button>-->
+<!--                    <blockquote class="layui-elem-quote layui-quote-nm" style="margin-top: 11px;">-->
+<!--                        预览图：-->
+<!--                        <div class="layui-upload-list" id="upload-demo-preview"></div>-->
+<!--                    </blockquote>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="edit">立即提交</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+
+
+    </form>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    let initData;
+
+    function initForm(data) {
+        let jsonString = JSON.stringify(data);
+        initData = JSON.parse(jsonString);
+        id = data.id;
+        name=data.name;
+        price=data.price;
+        stock=data.stock;
+    }
+
+    layui.use(["element", "form", "laydate", "okLayer", "okUtils", "upload"], function () {
+        let form = layui.form;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        var upload = layui.upload
+        var element = layui.element;
+        var $ = layui.$;
+        var layer = layui.layer;
+
+
+        // 单图片上传
+        var uploadInst = upload.render({
+            elem: '#ID-upload-demo-btn',
+            url: '../../item.action?op=uploadInst', // 实际使用时改成您自己的上传接口即可。
+            done: function (res) {  // 上传完毕回调
+                document.getElementById("onePic").value = res.data;   // 设置前面的隐藏表单的值
+                if (res.code > 0) {
+                    return layer.msg('上传失败');
+                }
+                console.log(res); // 输出服务器返回的数据
+                $('#ID-upload-demo-text').html(''); // 置空上传失败的状态
+            },
+            before: function (obj) {
+                // 预读本地文件示例，不支持ie8
+                obj.preview(function (index, file, result) {
+                    $('#ID-upload-demo-img').attr('src', result); // 图片链接（base64）
+                });
+
+                element.progress('filter-demo', '0%'); // 进度条复位
+                layer.msg('上传中', {icon: 16, time: 0});
+            },
+            error: function () {
+                // 演示失败状态，并实现重传
+                var demoText = $('#ID-upload-demo-text');
+                demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+                demoText.find('.demo-reload').on('click', function () {
+                    uploadInst.upload();
+                });
+            },
+            // 进度条
+            progress: function (n, elem, e) {
+                element.progress('filter-demo', n + '%'); // 可配合 layui 进度条元素使用
+                if (n == 100) {
+                    layer.msg('上传完毕', {icon: 1});
+                }
+            }
+        });
+
+        // 附/多图上传
+        upload.render({
+            elem: '#ID-upload-demo-btn-2',
+             url: '../../item.action?op=uploadSeveral', // 实际使用时改成您自己的上传接口即可。
+            multiple: true,
+            before: function(obj){
+                // 预读本地文件示例，不支持ie8
+                obj.preview(function(index, file, result){
+                    $('#upload-demo-preview').append('<img src="'+ result +'" alt="'+ file.name +'" style="width: 90px; height: 90px;">')
+                });
+            },
+            done: function(res){
+                // 上传完毕
+                if (res.code > 0) {
+                    return layer.msg('上传失败');
+                }
+                // …
+            }
+        });
+
+
+
+
+
+        okLoading.close();
+        form.val("filter", initData);
+
+        laydate.render({elem: "#birthday", type: "datetime"});
+
+        form.verify({
+            birthdayVerify: [/^((((1[6-9]|[2-9]\d)\d{2})-(0?[13578]|1[02])-(0?[1-9]|[12]\d|3[01]))|(((1[6-9]|[2-9]\d)\d{2})-(0?[13456789]|1[012])-(0?[1-9]|[12]\d|30))|(((1[6-9]|[2-9]\d)\d{2})-0?2-(0?[1-9]|1\d|2[0-8]))|(((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00))-0?2-29-))(\s(([01]\d{1})|(2[0123])):([0-5]\d):([0-5]\d))?$/, '日期格式不正确']
+        });
+
+        form.on("submit(edit)", function (data) {
+            okUtils.ajax("/shop_war/admin/item.action?op=edit", "post", data.field, true).done(function (response) {
+                console.log(response);
+                okLayer.greenTickMsg("编辑成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        });
+    })
+</script>
+</body>
+</html>

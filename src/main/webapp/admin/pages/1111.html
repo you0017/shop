@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Template</title>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios.js"></script>
+    <script src="../lib/layui/layui.js"></script>
+    <link rel="stylesheet" href="../lib/layui/css/layui.css">
+    <style>
+        body {
+            margin: 0px;
+        }
+
+        body #vm {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #333;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar .contact-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .sidebar .contact {
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #444;
+        }
+
+        .sidebar .contact:hover {
+            background: #444;
+        }
+
+        .chat-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .chat-header {
+            background: #eee;
+            padding: 15px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .chat-body {
+            /*flex: 1;*/
+            /*padding: 15px;*/
+            /*overflow-y: auto;*/
+            background: #f9f9f9;
+        }
+
+        .chat-message {
+            margin: 10px 0;
+        }
+
+        .chat-message.user {
+            text-align: left;
+        }
+
+        .chat-message.shoper {
+            text-align: right;
+        }
+
+
+        .chat-message .message-content {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 10px;
+            background: #ddd;
+        }
+
+        .chat-message.user .message-content {
+            background: #4caf50;
+            color: #fff;
+        }
+
+        .chat-footer {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+        }
+
+        .chat-footer input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .chat-footer button {
+            padding: 10px 15px;
+            border: none;
+            background: #4caf50;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-left: 10px;
+        }
+
+        /*.my-message {*/
+        /*    text-align: right;*/
+        /*    color: blue;*/
+        /*}*/
+
+        /*.their-message {*/
+        /*    text-align: left;*/
+        /*    color: green;*/
+        /*}*/
+
+    </style>
+</head>
+<body>
+<div id="vm">
+
+
+    <div class="sidebar">
+        <div class="contact-list">
+            <!--            onclick="switchChat(index)"-->
+            <div class="contact" v-for="(item,index) in obj" @click="getChatMessage(index)">
+                {{item[0].sender}}&nbsp;&nbsp;&nbsp;
+                <span class="layui-badge" v-if="count[index]>0">{{count[index]}}</span>
+<!--                <span class="layui-badge" v-if="count==index" >1</span>-->
+            </div>
+        </div>
+    </div>
+
+    <template>
+        <div class="chat-window">
+            <!--        <div class="chat-header" id="chat-header">Select a Contact</div>-->
+            <div class="chat-header" id="chat-header">{{chatName}}</div>
+
+            <div class="chat-body" id="chat-body" v-for="(item, index) in man">
+                <!-- Messages will be appended here -->
+                <!--            class="chat-message user"-->
+
+                <div :class="{'chat-message shoper ': item.sender == '店家', 'chat-message user': item.sender != '店家'}">
+                    <!--                class="message-content"-->
+                    <span> {{item.sender}}::{{ item.time }}</span>
+                    <br>
+                    <span class="message-content"> {{ item.message }}</span>
+
+                    <hr>
+                </div>
+
+
+            </div>
+
+
+            <div class="chat-footer">
+                <input type="text" id="message-input" placeholder="Type a message" v-model="newMessage"
+                       @keyup.enter="sendMessage">
+                <button @click="sendMessage()">Send</button>
+            </div>
+
+        </div>
+    </template>
+
+</div>
+
+<script>
+
+    let vm = new Vue({
+        el: '#vm',
+        data: {
+            obj: {},
+            man: {},
+            chatName: '',
+            newMessage: '',
+            count: [],
+
+            //服务器数据
+            protocol:'',
+            host:'',
+            endpoint:'',
+            contextPath:'',
+        },
+        methods: {
+            initWebSocket() {
+                // 获取当前页面的协议、主机和端口
+                //const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const protocol = this.protocol;
+
+
+                //const host = window.location.host;
+                //const host = this.host;
+                //考虑nginx反向代理没有端口的问题
+                const host = window.location.host.includes(':') ? window.location.host : window.location.host + ':8080';
+
+                //const endpoint = '/shop_war/echo';
+                const endpoint = this.contextPath +'/echo';
+                //const endpoint = this.endpoint+ this.contextPath +'/echo';
+                //const endpoint = '/shop/echo';
+
+                // 动态生成 WebSocket 的 URL
+                const wsUrl = `${protocol}://${host}${endpoint}`;
+                //const wsUrl = `${protocol}://${host}:${endpoint}`;
+
+                // 创建 WebSocket 连接
+                var ws = new WebSocket(wsUrl);
+
+                ws.onopen = function () {
+                    console.log('WebSocket 连接已经建立。');
+                    // ws.send('Hello, server!');
+                };
+
+                ws.onmessage = function (event) {
+                    console.log('收到服务器消息：', event.data);
+                    var id = event.data;   // 接到id
+                    console.log(id);       // 根据id发送数据查找记录
+                    // vm.getMessageById(id);
+                    // this.getMessageById(id);
+
+                    vm.$options.methods.getMessageById(id);
+                };
+
+                ws.onerror = function (event) {
+                    console.error('WebSocket 连接出现错误：', event);
+                };
+
+                ws.onclose = function () {
+                    console.log('WebSocket 连接已经关闭。');
+                };
+
+                window.onbeforeunload = function() {
+                    vm.$data.ws.close();
+                };
+
+                this.ws = ws;
+            },
+            // 点击用户名字的时候触发
+            getChatMessage(index) {
+                this.man = this.obj[index];
+                this.chatName = this.man[0].sender;
+
+                this.count[index] = 0;
+
+                console.log(this.man);
+                console.log(this.man[0].sender);
+            },
+
+            // 发消息的函数
+            sendMessage() {
+                var params = new URLSearchParams()
+                params.append("op", "setChatMessage")
+                params.append("newMessage", this.newMessage)
+                params.append("sender", this.chatName)
+                axios.post('../chat.action', params).then(response => {
+                    var result = response.data;
+                    if (result.code == 1) {
+                        // 渲染发送成功
+                        var msg={   // 创建一个消息对象
+                            sender: '店家',
+                            time: new Date().toLocaleString(),
+                            message: this.newMessage
+                        }
+                        this.man.push(msg)
+                        // 发送成功后清空输入框
+                        this.newMessage = '';
+                    } else {
+                        // 渲染发送失败
+                    }
+                })
+            },
+
+            // 根据id查找记录
+            getMessageById(id) {
+                var params = new URLSearchParams()
+                params.append("op", "getMessageById")
+                params.append("id", id)
+                axios.post('../chat.action', params).then(response => {
+                    var result = response.data;
+                    if (result.code == 1) {
+                        // 根据id成功拿到
+                        var msg={   // 创建一个消息对象
+                            sender: result.obj.sender,
+                            time: result.obj.time,
+                            message: result.obj.message
+                        }
+                        var flag = false;   // 判断是否已经存在  假设不在
+                        for (let i = 0; i < vm.$data.obj.length; i++) {
+                            if(vm.$data.obj[i][0].sender==msg.sender){
+                                vm.$data.obj[i].push(msg);
+                                //vm.$data.count=i;
+                                vm.$data.count[i]++;
+                                flag=true;
+                            }
+                        }
+                        // vm.$data.obj.forEach(s=>{
+                        //     if(s[0].sender==msg.sender){
+                        //         s.push(msg);
+                        //         flag=true;
+                        //     }
+                        // });
+                        if (!flag){
+                            var arr = new Array();
+                            arr.push(msg);
+                            vm.$data.obj.push(arr);
+                            vm.$data.count.push(1);   // 给新消息加上小点
+                        }
+                    } else {
+                        // 渲染发送失败
+                    }
+                })
+            }
+
+        },
+        mounted: function () {
+            axios.get('../chat.action?op=getAllChat').then(response => {
+                data = response.data;
+                if (data.code == 1) {
+                    this.obj = data.obj;
+                    console.log(this.obj)
+                    this.count = new Array(this.obj.length).fill(0);
+                }
+            });
+
+            //用于初始化websocket
+            axios.post("../../html/normal.action?op=getServerInfo").then(result5=>{
+                if (result5.data.code==0){
+
+                }else{
+                    this.protocol = result5.data.obj.protocol;
+                    this.host = result5.data.obj.host;
+                    this.endpoint = result5.data.obj.port;
+                    this.contextPath = result5.data.obj.contextPath;
+                    //动态初始化websocket的url，并建立连接，用来提醒该刷新消息了
+                    this.initWebSocket();
+                }
+            })
+
+        }
+
+
+    });
+
+
+    function switchChat(contact) {
+        document.getElementById('chat-header').innerText = contact;
+        document.getElementById('chat-body').innerHTML = '';
+    }
+
+    // function sendMessage() {
+    //     const input = document.getElementById('message-input');
+    //     const message = input.value.trim();
+    //     if (message) {
+    //         const messageElement = document.createElement('div');
+    //         messageElement.classList.add('chat-message', 'user');
+    //         messageElement.innerHTML = `<div class="message-content">${message}</div>`;
+    //         document.getElementById('chat-body').appendChild(messageElement);
+    //         input.value = '';
+    //         input.focus();
+    //     }
+    // }
+</script>
+</body>
+</html>

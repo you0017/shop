@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo</title>
+    <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+    <script type="text/javascript" src="./lib/loading/okLoading.js"></script>
+    <link rel="stylesheet" href="layui/css/layui.css">
+    <script src="./layui/layui.js"></script>
+<!--    <script src="layui/layui.js"></script>-->
+</head>
+<body>
+
+<div class="layui-tab"  lay-filter="test-handle">
+    <ul class="layui-tab-title">
+        <li class="layui-this" lay-id="11">待处理订单</li>
+        <li lay-id="22" >发货操作</li>
+        <li lay-id="33">XXXX</li>
+    </ul>
+
+    <div class="layui-tab-content">
+
+        <div class="layui-tab-item layui-show">
+            <div class="ok-body">
+                <!--模糊搜索区域-->
+                <div class="layui-row">
+                    <form class="layui-form ok-search-form">
+                        <div class="layui-form-item">
+
+                            <div class="layui-inline">
+                                <label class="layui-form-label">订单日期从</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" class="layui-input" placeholder="订单日期" autocomplete="off" id="startTime"
+                                           name="startTime">
+                                </div>
+                            </div>
+
+
+                            <div class="layui-inline">
+                                <label class="layui-form-label">到</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" class="layui-input" placeholder="订单日期" autocomplete="off" id="endTime"
+                                           name="endTime">
+                                </div>
+                            </div>
+
+
+                            <div class="layui-inline">
+                                <label class="layui-form-label">用户ID</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" class="layui-input" placeholder="ID" autocomplete="off" name="id">
+                                </div>
+                            </div>
+
+
+                            <!--                <div class="layui-inline">-->
+                            <!--                    <label class="layui-form-label">请选择状态</label>-->
+                            <!--                    <div class="layui-input-inline">-->
+                            <!--                        <select name="status" lay-verify="" lay-search>-->
+                            <!--                            <option value="" selected>请选择状态</option>-->
+                            <!--                            <option value="1">未付款</option>-->
+                            <!--                            <option value="2">已付款|未发货</option>-->
+                            <!--                            <option value="3">已发货|未确认</option>-->
+                            <!--                            <option value="4">确认收货|交易成功</option>-->
+                            <!--                            <option value="5">交易取消|订单关闭 </option>-->
+                            <!--                            <option value="6">交易结束|已评价</option>-->
+                            <!--                        </select>-->
+                            <!--                    </div>-->
+                            <!--                </div>-->
+
+
+                            <div class="layui-inline">
+                                <div class="layui-input-inline">
+                                    <button class="layui-btn" lay-submit="" lay-filter="search">
+                                        <i class="layui-icon">&#xe615;</i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </form>
+                </div>
+                <!--数据表格-->
+                <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+            </div>
+        </div>
+
+        <div class="layui-tab-item">
+            <table id="test2"></table>
+        </div>
+
+        <!--XXXX-->
+        <div class="layui-tab-item">
+            <table id="test3"></table>
+        </div>
+    </div>
+
+</div>
+
+<!-- 请勿在项目正式环境中引用该 layui.js 地址 -->
+<script>
+    layui.use(['element', 'util', 'okMock'], function() {
+        let table = layui.table;
+        let okMock = layui.okMock;
+        // 表格渲染
+        let orderTable = table.render({
+            elem: '#tableId',
+            url: okMock.api.shippingOorder,
+            limit: 20,
+            page: true,
+            toolbar: true,
+            toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                {type: "checkbox", fixed: "left"},
+                {field: "id", title: "订单号", width: 100, sort: true},
+                {field: "user_id", title: "用户ID", width: 100, sort: true},
+                {field: "total_fee", title: "订单金额", width: 100, sort: true},
+                {field: "status", title: "状态", width: 100, templet: "#statusTpl"},
+                {field: "create_time", title: "订单时间", width: 160, sort: true},
+                {
+                    field: "pay_time", title: "付款时间", width: 160, sort: true, templet: function (d) {
+                        if (typeof d.pay_time == "undefined") {
+                            return '<p href="/detail/' + d.id + '" class="layui-table-link">' + '未付款' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.pay_time + '</p>'
+                    }
+                },
+
+                {
+                    field: "contact", title: "收货人", width: 70, templet: function (d) {
+                        if (typeof d.contact == "undefined") {
+                            return '<p  class="layui-table-link">' + '收货人未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.contact + '</p>'
+                    }
+                },
+                {
+                    field: "mobile", title: "电话", width: 100, templet: function (d) {
+                        if (typeof d.mobile == "undefined") {
+                            return '<p  class="layui-table-link">' + '电话未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.mobile + '</p>'
+                    }
+                },
+
+                {
+                    field: "contact", title: "收获地址", width: 200, templet: function (d) {
+                        if (typeof d.address == "undefined") {
+                            return '<p  class="layui-table-link">' + '地址未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.address + '</p>'
+                    }
+                },
+                {title: "操作", width: 100, align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                console.info(res, curr, count);
+            }
+        });
+
+    })
+</script>
+
+</body>
+</html>

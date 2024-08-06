@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>销售统计</title>
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css">
+    <script type="text/javascript" src="../../lib/layui/layui.js"></script>
+</head>
+<body>
+
+
+<div class="layui-tab">
+    <ul class="layui-tab-title">
+        <li class="layui-this">报表查看</li>
+        <li>图像查看</li>
+    </ul>
+
+    <form class="layui-form ok-search-form">
+        <div class="layui-tab-content">
+            <div class="layui-tab-item layui-show">
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">按年</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" id="timeYear" name="timeYear">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">按月</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" id="timeMonth" name="timeMonth">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">按日</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" id="timeDay" name="timeDay">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">
+                            <i class="layui-icon">&#xe615;</i>
+                        </button>
+                    </div>
+                </div>
+                <!--            报表查看-->
+                <table id="test1" lay-filter="test1"></table>
+            </div>
+        </div>
+    </form>
+
+
+    <!--        图像查看-->
+    <div class="layui-tab-item">
+        <table id="test2"></table>
+    </div>
+</div>
+</div>
+
+<script>
+    // 库存管理
+    layui.use(["table", "form", "laydate", "okLayer", "okUtils", "okMock", "element", "jquery"], function () {
+        var element = layui.element;
+        let table = layui.table;
+        let form = layui.form;
+        let util = layui.util;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        let okMock = layui.okMock;
+        var $ = layui.jquery;
+
+
+        laydate.render({
+            elem: '#timeYear'
+            , type: 'year'
+        });
+        laydate.render({
+            elem: '#timeMonth'
+            , type: 'month'
+        });
+        laydate.render({
+            elem: '#timeDay'
+            , type: 'date'
+        })
+
+        // 报表查询
+        let test1Tabel = table.render({
+            elem: '#test1',
+            url: okMock.api.saleData,
+            limit: 20,
+            page: true,
+            toolbar: true,
+            // toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                {field: "name", title: "商品名", sort: true},
+                {field: "price", title: "单价", sort: true},
+                {field: "total_price", title: "总销售金额", sort: true},
+                {field: "sold", title: "总销售数量", sort: true},
+                {title: "操作", align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                console.info(res, curr, count);
+            }
+        });
+
+        // 查询
+        form.on("submit(search)", function (data) {
+            test1Tabel.reload({
+                url: "../../inventory.action?op=getSaleDataByTime",
+                where: data.field,
+                page: {curr: 1}
+            });
+            return false;
+        })
+
+        // test1的头工具
+        // table.on("toolbar(test1)", function (obj) {
+        //     switch (obj.event) {
+        //         case "allWarn":
+        //             allWarn(obj);
+        //             break;
+        //     }
+        // });
+
+        // 监听工具条
+        table.on("tool(test1)", function (obj) {
+            let data = obj.data;
+            switch (obj.event) {
+                case "editWarning":
+                    editWarning(data);
+                    break;
+                case "replenishment":
+                    replenishment(data);
+                    break;
+                case "allWarn":
+                    allWarn(data);
+                    break;
+            }
+        });
+
+
+
+
+        // 设置库存上下限
+        function editWarning(data) {
+            // okLayer.open("设置预警值", "inventory_editWarning.html", "50%", "50%", function (layero) {
+            okLayer.open("设置预警值", "inventory_restrictions.html", "50%", "50%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+            }, function () {
+                test1Tabel.reload();
+            })
+        }
+
+        // 补货按钮
+        function replenishment(data) {
+            okLayer.open("更新库存", "inventory_replenishment.html", "50%", "50%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+            }, function () {
+                test1Tabel.reload();
+            })
+        }
+
+
+        // 一键设置预警值
+        function allWarn(data) {
+            okLayer.open("一件设置预警值", "inventory_allWarn.html", "50%", "50%", function (layero) {
+                    // let idsStr = okUtils.tableBatchCheck(table);
+                    // data.addData(idsStr)
+                    // let iframeWin = window[layero.find("iframe")[0]["name"]];
+                    // iframeWin.initForm(data);
+                }, function () {
+                    test1Tabel.reload();
+                }
+            )
+        }
+
+        // {
+        //     type: 2, // iframe类型
+        //         title: '新页面',
+        //     content: 'http://localhost:81/shop_war/admin/pages/often/inventory_allWarn.html', // 新页面的URL
+        //     data: data // 传递数据
+        // }
+
+
+        // 动态监控
+        $('#startTimer').on('click', function () {
+            var ws = new WebSocket('ws://localhost:81/shop_war/echo');
+            ws.onopen = function () {
+                console.log('WebSocket 连接已经建立。');
+                ws.send('你好，我是客户端发的数据');
+            };
+            ws.onmessage = function (event) {
+                $('#change').innerText = 'event.data';
+
+
+                console.log('收到服务器消息：', event.data);
+            };
+            ws.onerror = function (event) {
+                console.error('WebSocket 连接出现错误：', event);
+            };
+            ws.onclose = function () {
+                console.log('WebSocket 连接已经关闭。');
+            };
+        });
+
+
+    });
+
+
+</script>
+
+<!-- 表test1的操作 -->
+<script type="text/html" id="test1operationTpl">
+
+    <i class="layui-btn layui-btn-xs" lay-event="editWarning">设置</i>
+    <i class="layui-btn layui-btn-xs" lay-event="replenishment">补货</i>
+</script>
+
+<!-- 表test1的头工具操作 -->
+
+<script type="text/html" id="test1toolbarTpl">
+    <div class="layui-btn-container">
+        <button id="startTimer" type="button" class="layui-btn layui-btn-normal layui-btn-radius layui-btn-xs">
+            开启实时库存监控
+        </button>
+        <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="allWarn">一键预警</button>
+    </div>
+</script>
+
+
+<script type="text/html" id="test2operationTpl">
+    <i class="layui-btn layui-btn-xs" lay-event="replenishment">补货</i>
+</script>
+
+<script type="text/html" id="logoTpl">
+    <image src="{{d.image}}" style="width: 100px; height: auto;"/>
+</script>
+
+<script type="text/html" id="statusTpl">
+    <!--    如果现货大于上限-->
+    <!--    <span class="layui-btn layui-btn-danger layui-btn-xs layui-btn-radius">111</span>-->
+
+    {{#  if(d.warning_value_status ==2 ){ }}
+    <span class="layui-btn layui-btn-danger layui-btn-xs layui-btn-radius">动态预警</span>
+    <!-- 如果现货大于上限-->
+    {{#  } else if(d.stock > d.stock_up){ }}
+    <span class="layui-btn layui-btn-danger layui-btn-xs layui-btn-radius">高库存</span>
+    <!-- 如果现货小于下限-->
+    {{#  } else if(d.stock <= d.stock_down) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs layui-btn-radius">低库存</span>
+    {{#  } else  { }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs layui-btn-radius">正常</span>
+    {{#  } }}
+</script>
+
+<script type="text/html" id="shagnjiaTpl">
+    {{#  if(d.status == 1){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">上架中</span>
+    {{#  } else if(d.status == 0) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未上架</span>
+    {{#  } }}
+</script>
+
+
+</body>
+</html>

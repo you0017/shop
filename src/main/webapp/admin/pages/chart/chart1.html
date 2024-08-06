@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>柱状图</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../lib/loading/okLoading.css"/>
+    <link href="//unpkg.com/layui@2.9.14/dist/css/layui.css" rel="stylesheet">
+    <script src="//unpkg.com/layui@2.9.14/dist/layui.js"></script>
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+    <script src="../../js/vue.js"></script>
+    <script src="../../js/jquery-1.9.1.js"></script>
+    <script src="../../js/axios.js"></script>
+
+</head>
+<body>
+
+<div id="vm">
+    <div id="main" style="width: 100%;height:400px;margin-top: 50px;"></div>
+    <div>
+        <select id="yearMonthSelect" @change="handleSelectChange"></select>
+        <button type="button" class="layui-btn layui-btn-normal" @click="today()">今日数据</button>
+        <button type="button" class="layui-btn layui-btn-normal" @click="getYesterdayGraph()">昨日数据</button>
+        <button type="button" class="layui-btn layui-btn-normal" @click="getMonthGraph()">本月数据</button>
+        <button type="button" class="layui-btn layui-btn-normal" @click="getYearGraph()">年度数据</button>
+    </div>
+
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <h3>销量top表</h3>
+    <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+</div>
+
+
+<script src="../../lib/echarts/echarts.min.js"></script>
+
+
+<script type="text/javascript">
+    okLoading.close();
+    // 基于准备好的dom，初始化echarts实例
+
+    var vm = new Vue({
+        el: '#vm',
+        data: {
+            xDataArr: [],
+            yDataArr1: [],
+            yDataArr2: []
+        },
+        methods: {
+
+            // 初始化图表
+            initGraph: function () {
+                var myChart = echarts.init(document.getElementById('main'));
+                // 指定图表的配置项和数据
+                var option = {
+                    title: {
+                        text: '销量图'
+                    },
+                    tooltip: {},
+                    toolbox: {
+                        feature: {
+                            saveAsImage: {}, // 导出图片
+                            dataView: {}, // 数据视图
+                            restore: {}, // 重置
+                            dataZoom: {}, // 区域缩放
+                            magicType: {
+                                type: ['bar', 'line']
+                            } // 动态图表类型的切换
+                        }
+                    },
+                    legend: {
+                        data: ['销量', '销售额'],
+                        selectedMode: 'single', // 设置为单选模式
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: vm.$data.xDataArr,
+                    },
+                    yAxis: {
+                        type: 'value',
+                    },
+                    series: [{
+                        name: '销量',
+                        type: 'bar',
+                        data: vm.$data.yDataArr1,
+                        markPoint: { // 标记点
+                            data: [
+                                {
+                                    type: 'max'
+                                },
+                                {
+                                    type: 'min'
+                                }
+                            ]
+                        },
+                    }, {
+                        name: '销售额',
+                        type: 'bar',
+                        data: this.yDataArr2,
+                        markPoint: { // 标记点
+                            data: [
+                                {
+                                    type: 'max'
+                                },
+                                {
+                                    type: 'min'
+                                }
+                            ]
+                        },
+                    }
+                    ]
+                };
+                myChart.setOption(option);
+                myChart.on('rerender', function () {
+                    console.log('图表已重新渲染');
+                });
+            },
+
+            // 获取年度数据
+            getYearGraph: function () {
+                var params = new URLSearchParams()
+                params.append("op", "getYearGraph")
+                axios.post('../../graph.action', params).then(response => {
+                    var result = response.data;
+                    if (result.code == 1) {
+                        this.xDataArr = result.obj[0];
+                        this.yDataArr1 = result.obj[1];
+                        this.yDataArr2 = result.obj[2];
+                        this.initGraph();
+                    } else {
+                        // 渲染发送失败
+                        alert("获取失败")
+                    }
+                })
+            },
+
+            //
+            getMonthGraph: function () {
+                var params = new URLSearchParams()
+                params.append("op", "getMonthGraph")
+                axios.post('../../graph.action', params).then(response => {
+                    var result = response.data;
+                    if (result.code == 1) {
+                        this.xDataArr = result.obj[0];
+                        this.yDataArr1 = result.obj[1];
+                        this.yDataArr2 = result.obj[2];
+                        this.initGraph();
+                    } else {
+                        // 渲染发送失败
+                        alert("获取失败")
+                    }
+                })
+            },
+
+            // 昨天的数据
+            getYesterdayGraph: function () {
+                var params = new URLSearchParams()
+                params.append("op", "getYesterdayGraph")
+                axios.post('../../graph.action', params).then(response => {
+                    var result = response.data;
+                    if (result.code == 1) {
+                        this.xDataArr = result.obj[0];
+                        this.yDataArr1 = result.obj[1];
+                        this.yDataArr2 = result.obj[2];
+                        this.initGraph();
+                    } else {
+                        // 渲染发送失败
+                        alert("获取失败")
+                    }
+                })
+            },
+
+            // 今天的销量
+            today: function () {
+                var params = new URLSearchParams()
+                params.append("op", "getTodayGraph")
+                axios.post('../../graph.action', params).then(response => {
+                    var result = response.data;
+                    if (result.code == 1) {
+                        this.xDataArr = result.obj[0];
+                        this.yDataArr1 = result.obj[1];
+                        this.yDataArr2 = result.obj[2];
+                        this.initGraph();
+                    } else {
+                        alert("获取失败")
+                        // 渲染发送失败
+                    }
+                })
+            },
+
+            // 监听选择框改变事件
+            handleSelectChange: function (event) {
+                console.log('选中的值为：', event.target.value);
+                let str = event.target.value;
+                str = str.split("-");
+                var year = str[0];
+                var month = str[1];
+                var params = new URLSearchParams()
+                params.append("op", "getMonthYearGraph")
+                params.append("year", year)
+                params.append("month", month)
+                // params.append("sender", this.chatName)
+                axios.post('../../graph.action', params).then(response => {
+                    var result = response.data;
+                    if (result.code == 1) {
+                        this.xDataArr = result.obj[0];
+                        this.yDataArr1 = result.obj[1];
+                        this.yDataArr2 = result.obj[2];
+                        vm.initGraph();
+                    } else {
+                        // 渲染发送失败
+                        alert("获取失败")
+                    }
+                })
+            },
+
+            // 初始化日期
+            generateYearMonthOptions: function () {
+                const currentDate = new Date();
+                const currentYear = currentDate.getFullYear();
+                const currentMonth = currentDate.getMonth() + 1;
+                const selectElement = document.getElementById('yearMonthSelect');
+
+                for (let i = 0; i < 36; i++) {
+                    const year = currentYear - Math.floor(i / 12);
+                    const month = i % 12 + 1;
+                    const option = document.createElement('option');
+                    option.value = `${year}-${month}`;
+                    option.textContent = `${year}年${month}月`;
+                    selectElement.appendChild(option);
+                }
+            },
+
+            // 初始化图表
+            getInitGraph: function () {
+                $.ajax({
+                    url: '../../../admin/graph.action?op=getInitGraph', // 请求的URL
+                    type: 'get', // 请求类型为GET
+                    dataType: 'json', // 期望服务器返回JSON格式的数据
+                    success: function (response) {
+                        if (response.code == 1) {
+                            // 横轴数据
+                            vm.$data.xDataArr = response.obj[0];
+                            // 纵轴数据
+                            vm.$data.yDataArr1 = response.obj[1];
+                            vm.$data.yDataArr2 = response.obj[2];
+                            vm.initGraph();
+
+                        }
+                        console.log('请求成功，返回的数据是：', response);
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error('请求失败，错误信息：', textStatus, errorThrown);
+                    }
+                })
+            },
+            // 点击查询按钮，获取查询条件，并重新渲染图表
+        },
+        mounted: function () {
+            this.getInitGraph();
+            this.generateYearMonthOptions();
+        }
+    })
+
+    layui.use(['table', 'dropdown', 'jquery'], function () {
+        var table = layui.table;
+        var dropdown = layui.dropdown;
+        var $ = layui.jquery;
+
+        let topTable = table.render({
+            elem: '#tableId',
+            url: '../../../admin/graph.action?op=getGoodsTop',
+            limit: 20,
+            page: true,
+            toolbar: true,
+            toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                {field: "name", title: "商品名称",},
+                {field: "sold_quantity", title: "销售数量", sort: true},
+                {field: "total_sales", title: "销售金额", sort: true},
+            ]],
+            done: function (res, curr, count) {
+                console.info(res, curr, count);
+            }
+        });
+
+        table.on("toolbar(tableFilter)", function (obj) {
+            switch (obj.event) {
+                case "todayTop":
+                    todayTop();
+                    break;
+                case "yesterdayTop":
+                    yesterdayTop();
+                    break;
+                case "monthTop":
+                    monthTop();
+                    break;
+                case "yearTop":
+                    yearTop();
+                    break;
+                case "allTop":
+                    allTop();
+                    break;
+            }
+        });
+
+        // allTop
+        function allTop() {
+            table.reload('tableId', {
+                url: "../../../admin/graph.action?op=getGoodsTop", // 新的URL地址
+                page: {
+                    curr: 1 // 重新从第一页开始加载
+                }
+            });
+        }
+        // 今日top
+        function todayTop() {
+            table.reload('tableId', {
+                url: "../../../admin/graph.action?op=getTodayTop", // 新的URL地址
+                page: {
+                    curr: 1 // 重新从第一页开始加载
+                }
+            });
+        }
+
+        // 昨日top
+        function yesterdayTop() {
+            table.reload('tableId', {
+                url: "../../../admin/graph.action?op=yesterdayTop", // 新的URL地址
+                page: {
+                    curr: 1 // 重新从第一页开始加载
+                }
+            });
+        }
+
+        // 本月top
+        function monthTop() {
+            table.reload('tableId', {
+                url: "../../../admin/graph.action?op=monthTop", // 新的URL地址
+                page: {
+                    curr: 1 // 重新从第一页开始加载
+                }
+            });
+        }
+
+        // 年度top
+        function yearTop() {
+            table.reload('tableId', {
+                url: "../../../admin/graph.action?op=yearTop", // 新的URL地址
+                page: {
+                    curr: 1 // 重新从第一页开始加载
+                }
+            });
+        }
+    })
+</script>
+<!-- 头工具栏模板 -->
+<script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="todayTop">今日top</button>
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="yesterdayTop">昨日top</button>
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="monthTop">本月top</button>
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="yearTop">年度top</button>
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="allTop">总top</button>
+    </div>
+</script>
+</body>
+</html>

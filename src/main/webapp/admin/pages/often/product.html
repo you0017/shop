@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>产品列表</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--模糊搜索区域-->
+    <div class="layui-row">
+        <form class="layui-form ok-search-form">
+            <div class="layui-form-item">
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">开始日期</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" placeholder="开始日期" autocomplete="off" id="startTime"
+                               name="startTime">
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">截止日期</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" placeholder="截止日期" autocomplete="off" id="endTime"
+                               name="endTime">
+                    </div>
+                </div>
+
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">ID</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" placeholder="请输入查询产品ID" autocomplete="off"
+                               name="id">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">名称</label>
+                    <div class="layui-input-inline">
+                        <select id="myName" name="name" lay-filter="myName" lay-search>
+                        </select>
+                    </div>
+                </div>
+
+                <!--                <div class="layui-inline">-->
+                <!--                    <label class="layui-form-label">名称</label>-->
+                <!--                    <div class="layui-input-inline">-->
+                <!--                        <input type="text" class="layui-input" placeholder="请输入查询产品名" autocomplete="off"-->
+                <!--                               name="name">-->
+                <!--                    </div>-->
+                <!--                </div>-->
+
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">
+                            <i class="layui-icon">&#xe615;</i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </div>
+    <!--数据表格-->
+    <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    layui.use(["table", "form", "laydate", "okLayer", "okUtils", "okMock", "element", "jquery"], function () {
+        let table = layui.table;
+        let form = layui.form;
+        let util = layui.util;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        let okMock = layui.okMock;
+        let element = layui.element;
+        var $ = layui.jquery;
+        okLoading.close();
+        util.fixbar({});
+
+        laydate.render({elem: "#startTime", type: "datetime"});
+        laydate.render({elem: "#endTime", type: "datetime"});
+
+
+        let articleTable = table.render({
+            elem: "#tableId",
+            url: okMock.api.listProduct,
+            limit: 20,
+            page: true,
+            even: true,
+            toolbar: "#toolbarTpl",
+            size: "lg",
+            cols: [[
+                {type: "checkbox", fixed: "left"},
+                {field: "id", title: "ID", width: 70, sort: true},
+                {field: "name", title: "产品名称", width: 150},
+                // {field: "logo", title: "产品LOGO", width: 150, templet: "#logoTpl"},
+                {field: "image", title: "产品LOGO", width: 150, templet: "#logoTpl"},
+                {field: "price", title: "产品价格", width: 120, sort: true,},
+                {field: "stock", title: "产品数量", width: 120, sort: true,},
+                {field: "sold", title: "产品销量", width: 120, sort: true,},
+                {field: "category", title: "类别", width: 120, sort: true,},
+                {field: "status", title: "是否上架", width: 120, templet: "#statusTpl"},
+                {
+                    field: "rating", title: "评分", width: 200, sort: true, templet: function (d) {
+                        // 在这里添加rate组件
+                        var rating = d.rating;
+                        var rateHtml = '';
+                        for (var i = 1; i <= 5; i++) {
+                            if (i <= rating) {
+                                //  layui-bg-orange
+                                rateHtml += '<span class="layui-icon layui-icon-rate-solid "></span>';
+                            } else {
+                                rateHtml += '<span class="layui-icon layui-icon-rate"></span>';
+                            }
+                        }
+                        return rateHtml;
+                    }
+                },
+
+
+                {title: "操作", width: 180, align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+
+            done: function (res, curr, count) {
+                console.log(res, curr, count)
+            }
+        });
+
+        form.on("submit(search)", function (data) {
+            articleTable.reload({
+                url: "../../item.action?op=fuzzyQuery",
+                where: data.field,
+                page: {curr: 1}
+            });
+            return false;
+        });
+
+        table.on("toolbar(tableFilter)", function (obj) {
+            switch (obj.event) {
+                case "batchEnabled":
+                    batchEnabled();
+                    break;
+                case "batchDisabled":
+                    batchDisabled();
+                    break;
+                case "batchDelete":
+                    batchDelete();
+                    break;
+                case "allDel":
+                    allDel();
+                    break
+                case "allRise":
+                    allRise();
+                    break
+            }
+        });
+
+        table.on("tool(tableFilter)", function (obj) {
+            let data = obj.data;
+            switch (obj.event) {
+                case "updateById":
+                    updateById(data);
+                    break;
+                case "deleteById":
+                    deleteById(data.id);
+                    break;
+                case "downById":
+                    downById(data.id);
+                    break;
+                case "upById":
+                    upById(data.id);
+                    break;
+            }
+        });
+
+        // 全部上架
+        function allRise() {
+            okLayer.confirm("全部下架吗？", function () {
+                var limit = articleTable.config.limit;
+                var page = articleTable.config.page.curr;
+                okUtils.ajax("../../item.action?op=allRise", "post", {
+                    limit: limit,
+                    page: page,
+                }, true).done(function (response) {
+                    okUtils.tableSuccessMsg(response.msg);
+                }).fail(function (error) {
+                    console.log(error);
+                });
+
+            });
+        }
+
+        // 全部下架
+        function allDel() {
+            okLayer.confirm("全部下架吗？", function () {
+                var limit = articleTable.config.limit;
+                var page = articleTable.config.page.curr;
+                okUtils.ajax("../../item.action?op=allDel", "post", {
+                    limit: limit,
+                    page: page,
+                }, true).done(function (response) {
+                    okUtils.tableSuccessMsg(response.msg);
+                }).fail(function (error) {
+                    console.log(error);
+                });
+            });
+        }
+
+        // 批量上架
+        function batchEnabled() {
+            okLayer.confirm("确定要批量上架吗？", function (index) {
+                layer.close(index);
+                let idsStr = okUtils.tableBatchCheck(table);
+                var limit = articleTable.config.limit;
+                var page = articleTable.config.page.curr;
+                if (idsStr) {
+                    okUtils.ajax("../../item.action?op=batchEnabled", "post", {
+                        idsStr: idsStr,
+                        limit: limit,
+                        page: page
+                    }, true).done(function (response) {
+                        okUtils.tableSuccessMsg(response.msg);
+                    }).fail(function (error) {
+                        console.log(error);
+                    });
+                }
+            });
+        }
+
+        // 批量下架
+        function batchDisabled() {
+            okLayer.confirm("确定要批量下架吗？", function (index) {
+                layer.close(index);
+                let idsStr = okUtils.tableBatchCheck(table);
+                var limit = articleTable.config.limit;
+                var page = articleTable.config.page.curr;
+                if (idsStr) {
+                    okUtils.ajax("../../item.action?op=batchDisabled", "post", {
+                        idsStr: idsStr,
+                        limit: limit,
+                        page: page
+                    }, true).done(function (response) {
+                        okUtils.tableSuccessMsg(response.msg);
+                    }).fail(function (error) {
+                        console.log(error);
+                    });
+                }
+            });
+        }
+
+        // 批量删除
+        function batchDelete() {
+            okLayer.confirm("确定要批量删除吗？", function (index) {
+                layer.close(index);
+                let idsStr = okUtils.tableBatchCheck(table);
+                var limit = articleTable.config.limit;
+                var page = articleTable.config.page.curr;
+                if (idsStr) {
+                    okUtils.ajax("../../item.action?op=batchDelete", "post", {
+                        idsStr: idsStr,
+                        limit: limit,
+                        page: page
+                    }, true).done(function (response) {
+                        okUtils.tableSuccessMsg(response.msg);
+                    }).fail(function (error) {
+                        console.log(error);
+                    });
+                }
+            });
+        }
+
+        // 编辑
+        function updateById(data) {
+            okLayer.open("编辑产品", "product-edit.html?", "90%", "90%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+                articleTable.reload();
+            }, function () {
+                articleTable.reload();
+            })
+        }
+
+        // 下架
+        function downById(id) {
+            var limit = articleTable.config.limit;
+            var page = articleTable.config.page.curr;
+            // console.log(id);
+            okUtils.ajax("../../item.action?op=batchDisabled", "post", {
+                idsStr: id,
+                limit: limit,
+                page: page
+            }).done(function (response) {
+                okUtils.tableSuccessMsg(response.msg);
+            }).fail(function (error) {
+                console.log(error);
+            });
+        }
+
+        // 上架
+        function upById(id) {
+            var limit = articleTable.config.limit;
+            var page = articleTable.config.page.curr;
+            // console.log(id);
+            okUtils.ajax("../../item.action?op=batchEnabled", "post", {
+                idsStr: id,
+                limit: limit,
+                page: page
+            }).done(function (response) {
+                okUtils.tableSuccessMsg(response.msg);
+            }).fail(function (error) {
+                console.log(error);
+            });
+        }
+
+        // 删除
+        function deleteById(id) {
+            okLayer.confirm("确定要删除吗？", function () {
+                // let idsStr = okUtils.tableBatchCheck(table);
+                var limit = articleTable.config.limit;
+                var page = articleTable.config.page.curr;
+                okUtils.ajax("../../item.action?op=deleteById", "post", {
+                    idsStr: id,
+                    limit: limit,
+                    page: page
+                }).done(function (response) {
+                    okUtils.tableSuccessMsg(response.msg);
+                }).fail(function (error) {
+                    console.log(error);
+                });
+            })
+        }
+    });
+
+</script>
+<script>
+    layui.use(["jquery", 'form'], function () {
+        let $ = layui.jquery;
+        let form = layui.form;
+        // 搜索查询
+        window.onload = function () {
+            // 发送Ajax请求获取省份数据
+            $.ajax({
+                url: '../../item.action?op=getMyName', // 替换为实际的后台接口地址
+                type: 'post',
+                dataType: 'json',
+                success: function (data) {
+                    var myName = $('#myName');
+                    myName.empty(); // 清空下拉框
+                    var my = data.data;
+                    myName.append('<option ></option>');
+                    $.each(my, function (index, item) {
+                        myName.append('<option value="' + item.name + '">' +
+                            item.name + '</option>');
+                    });
+                    form.render('select'); // 重新渲染省份下拉框
+                }
+            });
+        }
+    })
+
+</script>
+<!-- 头工具栏模板 -->
+<script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="batchEnabled">批量上架</button>
+        <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="batchDisabled">批量下架</button>
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="batchDelete">批量删除</button>
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="allDel">全部下架</button>
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="allRise">全部上架</button>
+    </div>
+</script>
+<!-- 行工具栏模板 -->
+<script type="text/html" id="operationTpl">
+    <a href="javascript:" title="编辑" lay-event="updateById"><i class="layui-icon">&#xe642;</i></a>
+    <a href="javascript:" title="删除" lay-event="deleteById"><i class="layui-icon">&#xe640;</i></a>
+    <span class="layui-btn layui-btn-danger layui-btn-xs" lay-event="downById">下架</span>
+    <span class="layui-btn layui-btn-danger layui-btn-xs" lay-event="upById">上架</span>
+
+</script>
+
+<script type="text/html" id="logoTpl">
+    <image src="{{d.image}}" style="width: 80px; height: auto;"/>
+</script>
+
+<script type="text/html" id="urlTpl">
+    <a href="{{d.url}}" target="_blank">{{d.url}}</a>
+</script>
+
+<script type="text/html" id="statusTpl">
+    {{#  if(d.status == 1){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">上架中</span>
+    {{#  } else if(d.status == 0) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未上架</span>
+    {{#  } }}
+</script>
+
+</body>
+</html>

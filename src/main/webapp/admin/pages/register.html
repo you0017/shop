@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en" class="page-fill">
+<head>
+    <meta charset="UTF-8">
+    <title>ok-admin v2.0 | 很赞的后台模版 - 注册</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="keywords" content="ok-admin v2.0,ok-admin网站后台模版,后台模版下载,后台管理系统模版,HTML后台模版下载">
+    <meta name="description"
+          content="ok-admin v2.0，顾名思义，很赞的后台模版，它是一款基于Layui框架的轻量级扁平化且完全免费开源的网站后台管理系统模板，适合中小型CMS后台系统。">
+    <link rel="shortcut icon" href="../images/favicon.ico" type="image/x-icon"/>
+    <link rel="stylesheet" href="../css/oksub.css"/>
+    <style>
+        #login form.layui-form {
+            margin: 0;
+            transform: translate(-50%, -50%);
+        }
+
+        .register .tit {
+            padding-top: 15px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .register .code-box {
+            display: flex;
+        }
+
+        .register .code-box .btn-auth-code {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body class="page-fill">
+<div class="page-fill register" id="login">
+    <form class="layui-form ">
+        <div class="layui-form-item tit">注册</div>
+        <div class="layui-form-item input-item">
+            <label for="username">用户名</label>
+            <input type="text" lay-verify="required" name="username" placeholder="请输入账号" autocomplete="off"
+                   id="username" class="layui-input">
+        </div>
+        <div class="layui-form-item input-item">
+            <label for="password">密码</label>
+            <input type="password" lay-verify="required|password" name="password" placeholder="请输入密码"
+                   autocomplete="off" id="password" class="layui-input">
+        </div>
+        <div class="layui-form-item input-item">
+            <label for="comPassword">确认密码</label>
+            <input type="password" lay-verify="required|comPassword" name="password" placeholder="请确认密码"
+                   autocomplete="off" id="comPassword" class="layui-input">
+        </div>
+        <div class="layui-form-item input-item">
+            <label for="phone">输入手机号</label>
+            <input type="text" lay-verify="required|phone" name="phone" placeholder="请输入手机号" autocomplete="off"
+                   id="phone" maxlength="11" class="layui-input">
+        </div>
+        <div class="layui-form-item input-item code-box">
+            <label for="authCode">验证码</label>
+            <input type="text" lay-verify="required" name="captcha" placeholder="请输入验证码" id="authCode"
+                   autocomplete="off" maxlength="8" class="layui-input">
+            <button type="button" class="layui-btn btn-auth-code">获取验证码</button>
+        </div>
+
+
+        <div class="layui-input-inline ">
+            <select name="role" lay-verify="" lay-search>
+                <option value="1" selected>商家</option>
+                <option value="2">管理员</option>
+            </select>
+        </div>
+
+
+        <div class="layui-form-item">
+            <button class="layui-btn layui-block" lay-filter="register" lay-submit="">注册</button>
+        </div>
+        <div class="login-link">
+            <a href="login.html">有账号去登录</a>
+        </div>
+    </form>
+</div>
+<!--js逻辑-->
+<script src="../lib/layui/layui.js"></script>
+<script>
+    layui.use(["form", "okGVerify", "okUtils", "okLayer"], function () {
+        let form = layui.form;
+        let $ = layui.jquery;
+        let okGVerify = layui.okGVerify;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        let regPhone = /^[1][0-9]{10}$/;
+        /**手机号验证**/
+        let setInter = '';
+        /**定时器对象*/
+        let second = 60;//设置时间
+        /**
+         * 初始化验证码
+         */
+        // let verifyCode = new okGVerify("#captchaImg");
+
+        /**
+         * 数据校验
+         */
+        form.verify({
+            password: [/^[\S]{6,12}$/, "密码必须6到12位，且不能出现空格"],
+            phone: [
+                regPhone,
+                '输入的手机号格式不正确，请重新输入'
+            ],
+            comPassword: function (val) {
+                let password = $("#password").val();
+                return password == val ? '' : "两次密码不一致";
+            }
+        });
+
+        /**
+         * 表单提交
+         */
+        form.on("submit(register)", function (data) {
+            okUtils.ajax("../register.action?op=register", "post", data.field, true).done(function (response) {
+                okLayer.greenTickMsg(response.msg, function () {
+                    window.location = "./login.html";
+                })
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        });
+
+        // form.on("submit(login)", function (data) {
+        //     okLayer.greenTickMsg("注册成功,去登陆", function () {
+        //         window.location = "./login.html";
+        //     });
+        //     return false;
+        // });
+
+        /**
+         * 表单input组件单击时
+         */
+        $("#login .input-item .layui-input").click(function (e) {
+            e.stopPropagation();
+            $(this).addClass("layui-input-focus").find(".layui-input").focus();
+        });
+
+        /**
+         * 表单input组件获取焦点时
+         */
+        $("#login .layui-form-item .layui-input").focus(function () {
+            $(this).parent().addClass("layui-input-focus");
+        });
+
+        /**
+         * 表单input组件失去焦点时
+         */
+        $("#login .layui-form-item .layui-input").blur(function () {
+            $(this).parent().removeClass("layui-input-focus");
+            if ($(this).val() != "") {
+                $(this).parent().addClass("layui-input-active");
+            } else {
+                $(this).parent().removeClass("layui-input-active");
+            }
+        });
+
+
+
+        /** {
+         这段代码是使用jQuery编写的，当点击id为"btn-auth-code"的元素时，会执行以下操作：
+         1. 获取id为"phone"的元素的值，即手机号。
+         2. 判断当前元素是否具有"layui-btn-disabled"类，如果有则直接返回，不执行后续操作。
+         3. 使用正则表达式regPhone测试手机号是否符合格式要求，如果不符合则弹出提示框并让id为"phone"的元素获得焦点。
+         4. 如果手机号符合格式要求，且setInter变量不存在，则执行以下操作：
+         a. 清除setInter变量指向的定时器（如果有的话）。
+         b. 给当前元素添加"layui-btn-disabled"类，并将元素的文本内容设置为"second秒后获取"。
+         c. 设置一个定时器，每隔1000毫秒执行一次回调函数，回调函数的功能是：
+         i.   将second减1。
+         ii.  如果second小于1，则清除定时器，移除当前元素的"layui-btn-disabled"类，将元素的文本内容设置为"重新获取"，并将setInter变量置为空字符串，second变量重置为60。
+         iii. 如果second大于等于1，则将元素的文本内容设置为"second秒后获取"。
+         }**/
+        /**获取验证码**/
+        $('.btn-auth-code').click(function () {
+            let that = $(this),
+                phone = $("#phone").val();
+            if ($(this).hasClass("layui-btn-disabled")) {
+                return;
+            }
+            if (regPhone.test(phone)) {
+                if (!setInter) {
+                    // verifcode
+                    okUtils.ajax("../register.action?op=verifCode", "post", {phone:phone}, true).done(function (response) {
+                        okLayer.greenTickMsg(response.msg)
+                    }).fail(function (error) {
+                        console.log(error)
+                    });
+
+
+                    clearInterval(setInter);
+                    that.addClass("layui-btn-disabled");
+                    that.text(second + "秒后获取");
+                    setInter = setInterval(function () {
+                        second--;
+                        if (second < 1) {
+                            clearInterval(setInter);
+                            that.removeClass("layui-btn-disabled");
+                            that.text("重新获取");
+                            setInter = "";
+                            second = 60;
+                        } else {
+                            that.text(second + "秒后获取");
+                        }
+                    }, 1000);
+                }
+            } else {
+                layer.msg("输入的手机号格式不正确，请重新输入", {
+                    icon: "5",
+                    anim: "6",
+                });
+                $("#phone").focus();
+            }
+        });
+
+
+    });
+</script>
+</body>
+</html>

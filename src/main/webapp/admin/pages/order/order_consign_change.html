@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Demo</title>
+    <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script src="../../lib/loading/okLoading.js"></script>
+    <link rel="stylesheet" href="../../layui/css/layui.css">
+    <script src="../../layui/layui.all.js"></script>
+</head>
+<body>
+
+<div class="layui-tab" lay-filter="test-handle">
+    <ul class="layui-tab-title">
+        <li class="layui-this" lay-id="11">待处理订单</li>
+        <li lay-id="22">发货操作</li>
+        <li lay-id="33">快递单号</li>
+    </ul>
+
+    <div class="layui-tab-content">
+
+        <div class="layui-tab-item layui-show" data-id="1">
+            <div class="ok-body">
+                <div class="layui-row">
+                    <form class="layui-form ok-search-form" lay-filter="mysss">
+                        <div class="layui-form-item">
+
+                            <div class="layui-inline">
+                                <label class="layui-form-label">订单日期从</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" class="layui-input" placeholder="订单日期" autocomplete="off"
+                                           id="startTime"
+                                           name="startTime">
+                                </div>
+                            </div>
+
+
+                            <div class="layui-inline">
+                                <label class="layui-form-label">到</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" class="layui-input" placeholder="订单日期" autocomplete="off"
+                                           id="endTime"
+                                           name="endTime">
+                                </div>
+                            </div>
+
+
+                            <div class="layui-inline">
+                                <label class="layui-form-label">用户ID</label>
+                                <div class="layui-input-inline">
+                                    <input type="text" class="layui-input" placeholder="ID" autocomplete="off"
+                                           name="id">
+                                </div>
+                            </div>
+
+
+
+                            <div class="layui-inline">
+                                <div class="layui-input-inline">
+                                    <button class="layui-btn" lay-submit="" lay-filter="search">
+                                        <i class="layui-icon">&#xe615;</i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </form>
+                </div>
+                <!--数据表格-->
+                <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+            </div>
+        </div>
+
+        <!--        发货操作-->
+        <div class="layui-tab-item">
+
+            <form class="layui-form ok-form" lay-filter="filter">
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">用户id</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="user_id" name="user_id" placeholder="加载失败" autocomplete="on"
+                               class="layui-input"
+                               lay-verify="required" readonly>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">订单号</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="order_id" name="order_id" placeholder="加载失败" autocomplete="on"
+                               class="layui-input"
+                               lay-verify="required" readonly>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">收货人</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="user_name" name="user_name" placeholder="" autocomplete="on"
+                               class="layui-input"
+                               lay-verify="required">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">收货地址</label>
+                    <div class="layui-input-block">
+                        <textarea id="order_address" name="order_address" placeholder="加载失败"
+                                  class="layui-textarea"></textarea>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">收货人号码</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="mobile" name="mobile" placeholder="" autocomplete="on"
+                               class="layui-input"
+                               lay-verify="required">
+                    </div>
+                </div>
+
+
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">备注</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="remark" name="remark" placeholder="请输入备注" autocomplete="on"
+                               class="layui-input">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">物流公司</label>
+                    <div class="layui-input-block">
+                        <select style="display: block" name="send_company">
+                            <option value="邮政">邮政</option>
+                            <option value="申通">申通</option>
+                            <option value="中通">中通</option>
+                            <option value="圆通">圆通</option>
+                        </select>
+                    </div>
+                </div>
+
+
+
+
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+<!--                        <button class="layui-btn" lay-on="tabChange">切换到「标签3」</button>-->
+                        <button class="layui-btn" lay-submit lay-filter="send">立即发货</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+
+        <!--订单打印-->
+        <div class="layui-tab-item">
+            <table class="layui-hide" id="tableIdd" lay-filter="tableFilter"></table>
+        </div>
+    </div>
+
+</div>
+
+
+
+<!-- 头工具栏 -->
+<script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="allSend">一键发货</button>
+        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="multiSend">批量发货</button>
+    </div>
+</script>
+
+
+<script src="../../lib/layui/lay/okmodules/okUtils.js"></script>
+<script src="../../lib/layui/lay/okmodules/okLayer.js"></script>
+
+<script>
+    layui.use(['element', 'okUtils', 'table', 'jquery', 'element', 'table', 'laydate', 'form', 'layer', 'okLayer'], function () {
+        let table = layui.table;
+        var $ = layui.jquery;
+        let element = layui.element;
+        let laydate = layui.laydate;
+        let form = layui.form;
+        let layer = layui.layer;
+        let okLayer = layui.okLayer;
+        // let util = layui.util;
+
+        let okUtils = layui.okUtils;
+
+        okLoading.close($);
+        var changeTab;
+        laydate.render({elem: "#startTime", type: "datetime"});
+        laydate.render({elem: "#endTime", type: "datetime"});
+
+
+        // 物流订单表格渲染
+        var ss=table.render({
+            elem: '#tableIdd',
+            url: "../../logistics.action?op=getAllLogisticsData",   // 请求所有物流订单数据
+            limit: 20,
+            page: true,
+            toolbar: true,
+            toolbar: "#toolLogisticsbarTpl",
+            size: "sm",
+            cols: [[
+                {type: "checkbox", fixed: "left"},
+                {field: "order_id", title: "订单号", width: 100, sort: true},
+                {field: "shipping_date", title: "发货时间", width: 100, sort: true},
+                {field: "shipping_status", title: "状态", width: 100, sort: true},
+                {field: "receiver_name", title: "收货人", width: 100, sort: true},
+                {field: "receiver_phone", title: "收货电话", width: 100, sort: true},
+                {field: "receiver_address", title: "收货地址", width: 100, },
+                {field: "logistics_company", title: "物流公司", width: 100, },
+                {field: "tracking_number", title: "物流单号", width: 100, },
+                {field: "remarks", title: "备注", width: 100, sort: true},
+                {title: "操作", width: 100, align: "center", fixed: "right", templet: "#operationLogisticsTpl"}
+
+            ]]
+        })
+        // 待发货表格渲染
+        let orderTable = table.render({
+            elem: '#tableId',
+            url: "../../order.action?op=getAllUnshippedOrderData",
+            limit: 20,
+            page: true,
+            toolbar: true,
+            toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                {type: "checkbox", fixed: "left"},
+                {field: "id", title: "订单号", width: 100, sort: true},
+                {field: "user_id", title: "用户ID", width: 100, sort: true},
+                {field: "total_fee", title: "订单金额", width: 100, sort: true},
+                {field: "status", title: "状态", width: 100, templet: "#statusTpl"},
+                {field: "create_time", title: "订单时间", width: 160, sort: true},
+                {
+                    field: "pay_time", title: "付款时间", width: 160, sort: true, templet: function (d) {
+                        if (typeof d.pay_time == "undefined") {
+                            return '<p href="/detail/' + d.id + '" class="layui-table-link">' + '未付款' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.pay_time + '</p>'
+                    }
+                },
+
+                {
+                    field: "contact", title: "收货人", width: 70, templet: function (d) {
+                        if (typeof d.contact == "undefined") {
+                            return '<p  class="layui-table-link">' + '收货人未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.contact + '</p>'
+                    }
+                },
+                {
+                    field: "mobile", title: "电话", width: 100, templet: function (d) {
+                        if (typeof d.mobile == "undefined") {
+                            return '<p  class="layui-table-link">' + '电话未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.mobile + '</p>'
+                    }
+                },
+
+                {
+                    field: "contact", title: "收获地址", width: 200, templet: function (d) {
+                        if (typeof d.address == "undefined") {
+                            return '<p  class="layui-table-link">' + '地址未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.address + '</p>'
+                    }
+                },
+                {title: "操作", width: 100, align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                console.log(res);
+            }
+        });
+
+        // 行工具
+        table.on("tool(tableFilter)", function (obj) {
+            let data = obj.data;
+            switch (obj.event) {
+                case "oneSend":
+                    oneSend(data);
+                    break
+            }
+        });
+
+        // 头工具
+        table.on("toolbar(tableFilter)", function (obj) {
+            switch (obj.event) {
+                case "allSend":
+                    allSend();
+                    break;
+                case "multiSend":
+                    multiSend(obj);
+                    break;
+            }
+        });
+
+        // 批量发货
+        function multiSend(obj){
+            // let checkStatus = table.checkStatus('tableFilter');
+            let idsStr = okUtils.tableBatchCheck(table);
+            if (idsStr == "" || idsStr.length==0) {
+                return
+            }
+            okLayer.open("批量发货", "order_multiSend.html", "50%", "50%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(idsStr);
+            }, function () {
+                orderTable.reload();   // 重新加载待发货表格
+            })
+        }
+
+        // 全部发货
+        function allSend() {
+            okLayer.open("全部发货", "order_allSend.html", "50%", "50%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(idsStr);
+                // orderTable.reload();   // 重新加载待发货表格
+            }, function () {
+                orderTable.reload();   // 重新加载待发货表格
+            })
+        }
+
+
+        // 点击表格中的发货按钮
+        function oneSend(data) {
+            changeTab = data;
+            element.tabChange('test-handle', '22');
+            document.getElementById("order_id").value = changeTab.id;
+            document.getElementById("user_id").value = changeTab.user_id;
+            document.getElementById("order_address").value = changeTab.address
+            document.getElementById("mobile").value = changeTab.mobile
+            document.getElementById("user_name").value = changeTab.contact
+            orderTable.reload();
+        }
+
+
+        // 发货按钮
+        form.on('submit(send)', function (data) {
+            $.ajax({
+                url: "../../order.action?op=recover",
+                type: "post",
+                data: data.field,
+                dataType: "json",
+                success: function (response) {
+                    let result = response.code;
+                    if (result == 0) { // 发货成功
+                        layer.alert(response.msg);
+                        document.getElementById("order_id").value = '';
+                        document.getElementById("user_id").value = '';
+                        document.getElementById("order_address").value = '';
+                        document.getElementById("mobile").value = '';
+                        document.getElementById("user_name").value = '';
+                        element.tabChange('test-handle', '33');   // 切换到订单打印
+                        ss.reload();
+                    } else { // 发货失败
+                        layer.alert(response.msg);
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.log("请求失败，错误信息：" + error);
+                }
+            })
+            return false;
+        })
+    })
+</script>
+
+
+
+
+
+
+<script type="text/html" id="operationTpl">
+    <!--    -->
+    <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="oneSend">发货</button>
+</script>
+
+
+
+
+<!--表格中的状态-->
+<script type="text/html" id="statusTpl">
+    {{#  if(d.status == 2){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">代发货</span>
+    {{#  } else { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未知</span>
+    {{#  } }}
+</script>
+
+
+</body>
+</html>

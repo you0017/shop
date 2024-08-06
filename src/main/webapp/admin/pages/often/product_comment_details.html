@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>用户评论</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+    <style>
+        .myclass {
+
+        }
+    </style>
+</head>
+<body>
+<div class="ok-body">
+
+
+    <div class="layui-row">
+        <form class="layui-form ok-search-form">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">审核状态</label>
+                    <div class="layui-input-inline">
+                        <select name="shenhe" lay-verify="" lay-search>
+                            <option value="" selected>请选择审核状态</option>
+                            <option value="0">待审核</option>
+                            <option value="1">未通过</option>
+                            <option value="2">已通过</option>
+
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">回复状态</label>
+                    <div class="layui-input-inline">
+                        <select name="huifu" lay-verify="" lay-search>
+                            <option value="" selected>请选择回复状态</option>
+                            <option value="0">未回复</option>
+                            <option value="1">已回复</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">星级</label>
+                    <div class="layui-input-inline">
+                        <select name="dengji" lay-verify="" lay-search>
+                            <option value="" selected>请选择评分星级</option>
+                            <option value="5">5星好评</option>
+                            <option value="4">4星及以下</option>
+                            <option value="3">3星及以下</option>
+                            <option value="2">2星及以下</option>
+                            <option value="1">1星差评</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">
+                            <i class="layui-icon">&#xe615;</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+    <div style="overflow-x: auto;">
+        <table class=" layui-table layui-hide" id="tableId" lay-filter="tableFilter"></table>
+    </div>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    layui.use(["table", "form", "laydate", "okLayer", "okUtils", "okMock", "rate", "jquery"], function () {
+        let table = layui.table;
+        let form = layui.form;
+        let util = layui.util;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        let okMock = layui.okMock;
+        var rate = layui.rate;
+        let $ = layui.jquery;
+        okLoading.close();
+        util.fixbar({});
+
+        laydate.render({elem: "#startTime", type: "datetime"});
+        laydate.render({elem: "#endTime", type: "datetime"});
+
+        // 评分函数
+        let rater = function (name, x, count) {
+            rate.render({
+                elem: '#' + name + count,
+                value: x,
+                readonly: true
+            })
+        }
+
+
+        let articleTable = table.render({
+            elem: "#tableId",
+            url: okMock.api.listComment,
+            limit: 20,
+            page: true,
+            even: true,
+            toolbar: "#toolbarTpl",
+            size: "lg",
+            cols: [[
+                {type: "checkbox", fixed: "left"},
+                // {field: "id", title: "编号", width: 90, style: 'text-align:center'},
+                {field: "accountname", title: "用户名", width: 90, style: 'text-align:center'},
+                {field: "name", title: "产品名称", width: 150, style: 'text-align:center'},
+                {
+                    field: "", title: "评论", templet:
+                        // "#myOperationTpl"
+                        function (d) {
+
+                        var escapedComment = removeHtmlTags(d.comment);
+                            var html = '<div class="comment-container">' + escapedComment + '</div>';
+                        return html;
+                    }
+                },
+                {
+                    field: "created_at", title: "评论时间", width: 200, style: 'text-align:center', templet(d) {
+                        var str = d.created_at;
+                        return str.slice(0, -2);
+                    }
+                },
+                {
+                    field: "", title: "审核状态", width: 100, style: 'text-align:center', templet(d) {
+                        var shop_reply = d.shop_reply;
+                        if (shop_reply == 0) {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-warm" >待审核</button>'
+                        } else if (shop_reply == 1) {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-danger" >不通过</button>'
+                        } else if (shop_reply == 2) {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-normal" >通过</button>'
+                        } else {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-danger" >过期</button>'
+                        }
+                    }
+                },
+                {
+                    field: "", title: "回复状态", width: 100, style: 'text-align:center', templet(d) {
+                        var shop_backcomment_status = d.shop_backcomment_status;
+                        if (shop_backcomment_status == 0) {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-warm" >未回复</button>'
+                        } else if (shop_backcomment_status == 1) {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-normal" >已回复</button>'
+                        } else {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-danger" >异常</button>'
+                        }
+                    }
+                },
+                {
+                    field: "shop_backcomment", title: "回复内容", width: 100, style: 'text-align:center', templet(d) {
+                        var shop_backcomment = d.shop_backcomment;
+                        if (shop_backcomment != null && shop_backcomment != '') {
+                            return shop_backcomment;
+                        } else {
+                            return '-'
+                        }
+                    }
+                },
+
+
+                {
+                    field: "rating", title: "评分", width: 130, sort: true, templet: function (d) {
+                        // 在这里添加rate组件
+                        var rating = d.rating;
+                        var rateHtml = '';
+                        for (var i = 1; i <= 5; i++) {
+                            if (i <= rating) {
+                                //  layui-bg-orange
+                                rateHtml += '<span class="layui-icon layui-icon-rate-solid "></span>';
+                            } else {
+                                rateHtml += '<span class="layui-icon layui-icon-rate"></span>';
+                            }
+                        }
+                        return rateHtml;
+                    }
+                },
+                {title: "操作", width: 100, align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                $('.comment-container').on({
+                    mouseenter: function () {
+                        // 显示提示框，传递this（当前元素），自定义内容和样式
+                        layer.tips('用户评论：' + $(this).text(), this, {
+                            tips: [1, '#333'],
+                            time: 0
+                        });
+                    },
+                    mouseleave: function () {
+                        // 隐藏提示框
+                        layer.closeAll('tips');
+                    }
+                });
+            }
+        });
+
+        // 标签过滤器
+        function removeHtmlTags(str) {
+            return str.replace(/<[^>]*>?/gm, '');
+        }
+
+        // 防止html注入
+        function htmlEscape(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        table.on("toolbar(tableFilter)", function (obj) {
+            switch (obj.event) {
+                case "batchEnabled":   // 批量审核
+                    batchEnabled();
+                    break
+                case "batchDisabled":  // 一键审核
+                    batchDisabled();
+                    break
+                case "allReply":  // 一键回复
+                    allReply();
+                    break
+                case "selfReply":   // 自定义回复
+                    selfReply();
+                    break
+            }
+        });
+
+        table.on("tool(tableFilter)", function (obj) {
+            let data = obj.data;
+            switch (obj.event) {
+                case "details":
+                    details(data);
+                    break
+
+            }
+        });
+
+        // 一键审核
+        function batchDisabled(data) {
+            layer.open({
+                title: '一键审核',
+                content: '注意,您正在操作全部待审核数据哦!!!'
+                , btn: ['通过', '不通过', '取消']
+                , btn1: function (index, layero) {
+                    //按钮【按钮一】的回调
+                    okUtils.ajax("../../comment.action?op=AllCommentOperate", "post", {operate: 'allOk'}, true).done(function (response) {
+                        console.log(response);
+                        okUtils.tableSuccessMsg(response.msg);
+                    }).fail(function (error) {
+                        console.log(error)
+                    });
+                },
+                btn2: function (index, layero) {
+                    //按钮【按钮二】的回调
+                    okUtils.ajax("../../comment.action?op=AllCommentOperate", "post", {operate: 'allNo'}, true).done(function (response) {
+                        console.log(response);
+                        okUtils.tableSuccessMsg(response.msg);
+                    }).fail(function (error) {
+                        console.log(error)
+                    });
+                    //return false 开启该代码可禁止点击该按钮关闭
+                },
+                btn3: function (index, layero) {
+                }
+            });
+        }
+
+        // 批量审核
+        function batchEnabled(data) {
+            let idsStr = okUtils.tableBatchCheck(table);
+            if (idsStr == "" || idsStr.length == 0) {
+                return
+            }
+            layer.open({
+                title: 'test',
+                content: '您正在批量审核'
+                , btn: ['通过', '不通过', '取消']
+                , btn1: function (index, layero) {
+                    //按钮【按钮一】的回调
+                    okUtils.ajax("../../comment.action?op=batchCommentEnabled", "post", {
+                        idsStr: idsStr,
+                        operate: 'ok'
+                    }, true).done(function (response) {
+                        console.log(response);
+                        okUtils.tableSuccessMsg(response.msg);
+                    }).fail(function (error) {
+                        console.log(error)
+                    });
+                },
+                btn2: function (index, layero) {
+                    //按钮【按钮二】的回调
+                    okUtils.ajax("../../comment.action?op=batchCommentEnabled", "post", {
+                        idsStr: idsStr,
+                        operate: 'no'
+                    }, true).done(function (response) {
+                        console.log(response);
+                        okUtils.tableSuccessMsg(response.msg);
+                    }).fail(function (error) {
+                        console.log(error)
+                    });
+                    //return false 开启该代码可禁止点击该按钮关闭
+                },
+                btn3: function (index, layero) {
+                },
+                cancel: function () {
+                    //右上角关闭回调
+
+                    //return false 开启该代码可禁止点击该按钮关闭
+                }
+            });
+        }
+
+        // 回复页面
+        function details(data) {
+            if (data.shop_reply < 2) {
+                layer.msg("您只能回复通过了的评论哦");
+                return;
+            }
+            okLayer.open("回复", "product_details.html?", "80%", "80%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+                // articleTable.reload();
+            }, function () {
+                articleTable.reload();
+            });
+        }
+
+        // 模糊查询功能
+        form.on("submit(search)", function (data) {
+            articleTable.reload({
+                url: "../../comment.action?op=fuzzyQueryComment",
+                where: data.field,
+                page: {curr: 1}
+            });
+            return false;
+        });
+
+        // 一键回复功能、快速回复
+        function allReply() {
+            let idsStr = okUtils.tableBatchCheck(table);   // 获取选中行序号
+            var checkStatus = table.checkStatus('tableId')
+            var data = checkStatus.data;
+            for (let dataKey in data) {
+                if (data[dataKey].shop_reply < 2) {
+                    layer.msg("您只能选中审核通过的数据哦");
+                    return;
+                }
+
+                if (data[dataKey].shop_backcomment_status == 1) {
+                    layer.msg("已回复的消息不能批量修改哦");
+                    return;
+                }
+            }
+            console.log(data);
+            if (idsStr == "" || idsStr.length == 0) {
+                return
+            }
+            layer.open({
+                type: 2,
+                title: '一键回复',
+                shadeClose: true,
+                maxmin: true, //开启最大化最小化按钮
+                area: ['300px', '200px'],
+                content: '../often/allReply.html?data=' + idsStr,
+            });
+        }
+
+        // 自定义回复功能
+        function selfReply() {
+            let idsStr = okUtils.tableBatchCheck(table);   // 获取选中行序号
+            var checkStatus = table.checkStatus('tableId')
+            var data = checkStatus.data;
+            for (let dataKey in data) {
+                if (data[dataKey].shop_reply < 2) {
+                    layer.msg("您只能选中审核通过的数据哦");
+                    return;
+                }
+                if (data[dataKey].shop_backcomment_status == 1) {
+                    layer.msg("已回复的消息到详情里修改哦");
+                    return;
+                }
+            }
+            if (idsStr == "" || idsStr.length == 0) {
+                return
+            }
+            layer.open({
+                type: 2,
+                title: '自定义回复',
+                shadeClose: true,
+                maxmin: true, //开启最大化最小化按钮
+                // 宽 高
+                area: ['90%', '70%'],
+                content: '../often/selfReply.html?data=' + idsStr,
+            });
+        }
+
+
+    })
+</script>
+
+
+<!-- 头工具栏模板 -->
+<script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="batchEnabled">批量审核</button>
+        <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="batchDisabled">一键审核</button>
+        <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="allReply">一键回复</button>
+        <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="selfReply">自定义回复</button>
+    </div>
+</script>
+<!-- 行工具栏模板 -->
+<script type="text/html" id="operationTpl">
+    <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="details">回复</button>
+</script>
+
+<script type="text/html" id="logoTpl">
+    <image src="{{d.image}}" style="width: 80px; height: auto;"/>
+</script>
+
+<script type="text/html" id="rateTpl">
+    <div class="layui-btn-container">
+        <div id="rating{{d.rating}}"></div>
+    </div>
+</script>
+
+<script type="text/html" id="urlTpl">
+    <a href="{{d.url}}" target="_blank">{{d.url}}</a>
+</script>
+
+<script type="text/html" id="statusTpl">
+    {{#  if(d.status == 1){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">上架中</span>
+    {{#  } else if(d.status == 0) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未上架</span>
+    {{#  } }}
+</script>
+
+</body>
+</html>

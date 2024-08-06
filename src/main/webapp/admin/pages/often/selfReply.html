@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>自定义回复</title>
+    <script src="../../js/vue.js"></script>
+    <script src="../../js/axios.js"></script>
+    <script src="../../js/jquery-1.9.1.js"></script>
+    <link href="//unpkg.com/layui@2.9.13/dist/css/layui.css" rel="stylesheet">
+    <script src="//unpkg.com/layui@2.9.13/dist/layui.js"></script>
+    <script src="../../ckeditor/ckeditor.js"></script>
+</head>
+<body>
+<div id="app">
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">自定义回复</label>
+        <div class="layui-input-block">
+            <textarea id="editor1" name="editor1" placeholder="请输入商品描述" class="layui-textarea"></textarea>
+        </div>
+    </div>
+
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+
+            <button type="submit" class="layui-btn layui-btn-sm " @click="selfCommentReplay()" lay-filter="demo1">
+                立即回复
+            </button>
+
+                <label class="layui-form-label">导入模板:</label>
+                <div class="layui-input-inline">
+                    <select style="width: 100px" @change="setSelf" lay-search="cs" v-model="selectedOption">
+                        <option  v-for="(option, index) in options">{{option.recorde_value}}</option>
+                    </select>
+                </div>
+
+            <div class="layui-form-item">
+                <div class="layui-input-block">
+                    <button type="submit" class="layui-btn layui-btn-sm " @click="keepSelf()" lay-filter="demo1">
+                        语句保存
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+
+</div>
+
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data: {
+            selectedOption: '',
+            options: [],
+            editor: '',
+            idsStr: '',
+            comments: ''
+        },
+        methods: {
+            keepSelf(){   // 保存我的自定义语句到数据字典里面
+                var params = new URLSearchParams()
+                params.append("op", "keepSelf")
+                params.append("comments", this.comments)
+                axios.post('../../comment.action', params).then(response => {
+                    var data = response.data;
+                    if ( data.code == 1) {
+                        alert("保存成功")
+                    }else {
+                        alert("保存失败")
+                    }
+                })
+            },
+            // 模板语句上到编辑器里面
+            setSelf(){
+                let temp = this.selectedOption;
+                this.editor.setData(temp);
+            },
+            selfCommentReplay() {
+                var params = new URLSearchParams()
+                params.append("op", "selfCommentReplay")
+                params.append("comments", this.comments)
+                params.append("idsStr", this.idsStr)
+                axios.post('../../comment.action', params).then(response => {
+                    data = response.data;
+                    if (data.code == 1) {
+                        alert(data.obj)
+                        parent.layer.close(parent.layer.getFrameIndex(window.name)); //关闭当前窗口
+                    } else {
+                        alert("操作失败")
+                    }
+                })
+            },
+
+            // 初始化编辑器
+            initEditor(){
+                let editor = CKEDITOR.replace('editor1');
+                editor.on('change', () => {
+                    this.comments = editor.getData();
+                });
+                // 将初始内容同步到 Vue 实例的 editorContent 中
+                this.comments = editor.getData();
+                // // 将 editor 实例保存在 Vue 实例中，以便其他方法中使用
+                this.editor = editor;
+            },
+
+            // 初始化回复模板
+            initTemplate() {
+                axios.get('../../comment.action?op=getBackCommentTemplate').then(response => {
+                    data = response.data;
+                    if (data.code == 1) {
+                        vm.$data.options = data.obj;
+                    }
+                })
+            },
+            initIdsStr() {
+                let queryString = window.location.search.substring(1);
+                let dataIndex = queryString.indexOf('data=');
+
+                if (dataIndex !== -1) {
+                    // 找到 data 参数后，获取其值
+                    let idsStr = queryString.substring(dataIndex + 5); // 跳过 'data=' 这部分
+                    // 如果需要，可以进一步处理 idsStr，比如使用 split(',') 来分割多个 ID
+                    console.log(idsStr); // 输出 idsStr 的值
+                    this.idsStr = idsStr;
+                }
+            },
+
+        },
+        mounted: function () {
+            this.initTemplate();           // 初始化模板
+            this.initIdsStr();     // 初始化idsStr
+            this.initEditor();  // 初始化编辑器
+
+
+        },
+        beforeDestroy() {
+            // 在组件销毁之前，确保销毁 CKEditor 实例以避免内存泄漏
+            if (CKEDITOR.instances.editor1) {
+                CKEDITOR.instances.editor1.destroy();
+            }
+        }
+    });
+</script>
+</body>
+</html>

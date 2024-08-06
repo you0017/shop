@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>退货处理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--模糊搜索区域-->
+    <div class="layui-row">
+        <form class="layui-form ok-search-form">
+            <div class="layui-form-item">
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">订单日期从</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" placeholder="订单日期" autocomplete="off" id="startTime"
+                               name="startTime">
+                    </div>
+                </div>
+
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">到</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" placeholder="订单日期" autocomplete="off" id="endTime"
+                               name="endTime">
+                    </div>
+                </div>
+
+
+                <div class="layui-inline">
+                    <label class="layui-form-label">用户ID</label>
+                    <div class="layui-input-inline">
+                        <input type="text" class="layui-input" placeholder="ID" autocomplete="off" name="id">
+                    </div>
+                </div>
+
+
+                <div class="layui-inline">
+                    <div class="layui-input-inline">
+                        <button class="layui-btn" lay-submit="" lay-filter="search">
+                            <i class="layui-icon">&#xe615;</i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+
+        </form>
+    </div>
+    <!--数据表格-->
+    <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    layui.use(["element", "jquery", "table", "form", "laydate", "okLayer", "okUtils", "okMock"], function () {
+        let table = layui.table;
+        let form = layui.form;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        let okMock = layui.okMock;
+        let $ = layui.jquery;
+
+        okLoading.close($);
+
+        laydate.render({elem: "#startTime", type: "datetime"});
+        laydate.render({elem: "#endTime", type: "datetime"});
+
+        let orderTable = table.render({
+            elem: '#tableId',
+            url: okMock.api.orderBack,
+            limit: 20,
+            page: true,
+            // toolbar: true,
+            // toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                {type: "checkbox", fixed: "left"},
+                {field: "return_id", title: "退货订单号", sort: true},
+                {field: "customer_id", title: "收款人ID", sort: true},
+                {field: "refund_amount", title: "退款金额", sort: true},
+                {field: "return_status", title: "状态",  templet: "#statusTpl"},
+                {
+                    field: "return_date", title: "处理日期", sort: true,
+                },
+                {title: "操作", align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                console.info(res, curr, count);
+            }
+        });
+        //
+        // function removeLastTwoChars(str) {
+        //     return str.slice(0, -2);
+        // }
+
+        form.on("submit(search)", function (data) {
+            data.field.status = 2;
+            orderTable.reload({
+                url: "../../order.action?op=fuzzyQuery",
+                where: data.field,
+                page: {curr: 1}
+            });
+            return false;
+        });
+
+        table.on("toolbar(tableFilter)", function (obj) {
+            switch (obj.event) {
+                case "recover":
+                    recover();
+                    break;
+            }
+        });
+
+        table.on("tool(tableFilter)", function (obj) {
+            let data = obj.data;
+            switch (obj.event) {
+                case "look":
+                    look(data);
+                    break;
+                case "del":
+                    del(data.id);
+                    break;
+                case "edit":
+                    edit(data);
+                    break;
+                case "passApply":
+                    passApply();
+                    break;
+            }
+        });
+
+
+        // 通过退货
+        function passApply() {
+            okLayer.open("退货处理", "order_passApply_tuihuo.html", "90%", "90%", function (layero) {
+            }, function () {
+
+            })
+
+        }
+
+
+        // 查看详情
+        function look(data) {
+            console.log(data);
+            okLayer.open("退货订单详情", "order_detail_back.html", "95%", "95%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+            }, function () {
+                orderTable.reload();
+            })
+        }
+
+        //
+        function edit(data) {
+            okLayer.open("发货处理", "order_send.html", "90%", "90%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+            }, function () {
+                orderTable.reload();
+            })
+        }
+
+        function del(id) {
+            okLayer.confirm("确定要删除吗？", function () {
+                let limit = orderTable.config.limit;
+                let page = orderTable.config.page.curr;
+                okUtils.ajax("../../order.action?op=del", "post", {
+                    idsStr: id,
+                    limit: limit,
+                    page: page
+                }, true).done(function (response) {
+                    console.log(response);
+                    okUtils.tableSuccessMsg(response.msg);
+                }).fail(function (error) {
+                    console.log(error)
+                });
+            })
+        }
+
+    })
+</script>
+<!-- 头工具栏模板 -->
+<!--<script type="text/html" id="toolbarTpl">-->
+<!--    <div class="layui-btn-container">-->
+<!--        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="allSend">一键发货</button>-->
+<!--    </div>-->
+<!--</script>-->
+<!-- 行工具栏模板 -->
+<script type="text/html" id="operationTpl">
+    <button class="layui-btn layui-btn-xs" lay-event="look">详情</button>
+</script>
+
+<script type="text/html" id="statusTpl">
+    {{#  if(d.return_status == 1){ }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">待处理</span>
+    {{#  } else if(d.return_status == 2) { }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">通过</span>
+    {{#  } else if(d.return_status == 3) { }}
+    <span class="layui-btn layui-btn-danger layui-btn-xs">不通过</span>
+    {{#  } }}
+</script>
+
+</body>
+</html>

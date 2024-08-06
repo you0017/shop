@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>退单</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+    <style>
+        .my {
+
+            font-weight: 600;
+            line-height: 22px;
+            background-color: #f5f5f5;
+            padding: 6px 0 6px 12px;
+            border-bottom: 1px solid #e7e7e7;
+
+        }
+    </style>
+</head>
+<body>
+<div class="ok-body">
+    <!--form表单-->
+    <form class="layui-form ok-form" lay-filter="filter">
+
+        <h3 class="my">售后申请</h3>
+        <div class="layui-form-item">
+            <label class="layui-form-label">售后单号</label>
+            <div class="layui-input-block">
+                <input type="text" id="return_id" name="return_id" placeholder="加载失败" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品名</label>
+            <div class="layui-input-block">
+                <input type="text" id="product_name" name="product_name" placeholder="加载失败" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">数量</label>
+            <div class="layui-input-block">
+                <input type="text" id="return_quantity" name="return_quantity" placeholder="加载失败" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款金额</label>
+            <div class="layui-input-block">
+                <input type="text" id="refund_amount" name="refund_amount" placeholder="加载失败" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+                <input type="text" id="name" name="name" placeholder="加载失败" autocomplete="on" class="layui-input"
+                       readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">申请时间</label>
+            <div class="layui-input-block">
+                <input type="text" id="return_date" name="return_date" placeholder="加载失败" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">原因</label>
+            <div class="layui-input-block">
+                <input type="text" id="return_reason" name="return_reason" placeholder="加载失败" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">申请类型</label>
+            <div class="layui-input-block">
+                <input type="text" id="back_type" name="back_type" placeholder="加载失败" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+        <h3 class="my">物流信息</h3>
+        <div class="layui-form-item">
+            <label class="layui-form-label">物流公司</label>
+            <div class="layui-input-block">
+                <input type="text" id="tracking_company" name="tracking_company" placeholder="无" autocomplete="on"
+                       class="layui-input" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">物流单号</label>
+            <div class="layui-input-block" readonly>
+                <input type="text" id="tracking_number" name="tracking_number" placeholder="无" autocomplete="on"
+                       class="layui-input">
+            </div>
+        </div>
+
+
+        <h3 class="my">商家操作</h3>
+        <div class="layui-form-item">
+            <label class="layui-form-label">实际退款</label>
+            <div class="layui-input-block">
+                <input type="text" id="realityBackMoney" name="realityBackMoney" placeholder="实际退款金额"
+                       autocomplete="on"
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">备注信息</label>
+            <div class="layui-input-block">
+                <input type="text" id="info" name="info" placeholder="备注信息" autocomplete="on"
+                       class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="edit">确定</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    let initData;
+
+    function initForm(data) {
+        document.getElementById("return_id").value = data.return_id   // 退款单号
+        document.getElementById("product_name").value = data.product_name   // 商品名称
+        document.getElementById("return_quantity").value = data.return_quantity   // 退货数量
+        document.getElementById("return_date").value = data.return_date   // 申请时间
+        document.getElementById("return_reason").value = data.return_reason   // 原因
+        document.getElementById("name").value = data.name   // 用户名
+        document.getElementById("refund_amount").value = data.refund_amount   // 退款金额
+        product_id = data.product_id   // 商品id
+        if (data.back_type == '1') {
+            document.getElementById("back_type").value = "仅退款"
+            document.getElementById("tracking_number").value = '无'  // 物流单号
+            document.getElementById("tracking_company").value = '无'   // 物流公司
+        } else if (data.back_type == '2') {
+            document.getElementById("back_type").value = "退货退款"
+            document.getElementById("tracking_number").value = data.tracking_number
+            document.getElementById("tracking_company").value = data.tracking_company   // 物流公司
+        }
+
+        return_status = data.return_status   // 退款状态
+    }
+
+
+    layui.use(["element", "form", "laydate", "okLayer", "okUtils"], function () {
+        let form = layui.form;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        okLoading.close();
+        form.val("filter", initData);
+
+        laydate.render({elem: "#birthday", type: "datetime"});
+
+
+        form.on("submit(edit)", function (data) {
+            if (return_status == 4) {
+                alert("该退款单已处理，无法编辑");
+                return false;
+            }else if (return_status == 2) {
+                alert("用户还未填写单号")
+                return false;
+            }
+            data.field.product_id = product_id;
+            okUtils.ajax("../../goodsback.action?op=over", "post", data.field, true).done(function (response) {
+                console.log(response);
+                okLayer.greenTickMsg("操作成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        });
+    })
+</script>
+</body>
+</html>

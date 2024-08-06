@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>批量发货</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="//unpkg.com/layui@2.9.13/dist/css/layui.css" rel="stylesheet">
+    <script src="../../layui/layui.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--form表单-->
+    <form class="layui-form ok-form" lay-filter="filter">
+        <div class="layui-col-md6 layui-col-md-offset3 center-box">
+            <br>
+            <label class="layui-form-label">物流公司</label>
+            <div class="layui-input-inline">
+                <select name="send_company">
+                    <option value="邮政" selected>邮政</option>
+                    <option value="中通">中通</option>
+                    <option value="圆通">圆通</option>
+                    <option value="顺丰">顺丰</option>
+                    <option value="韵达">韵达</option>
+                </select>
+            </div>
+
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="edit">确认发货</button>
+            </div>
+        </div>
+        </div>
+    </form>
+
+<script src="../../lib/layui/lay/okmodules/okLayer.js"></script>
+    <script src="../../lib/layui/lay/okmodules/okUtils.js"></script>
+    <script>
+        let initData;
+
+        //
+        function initForm(data) {
+            // 取id   发请求匹配 order_id  返回  渲染
+            let jsonString = JSON.stringify(data);
+            initData = JSON.parse(jsonString);
+        }
+        layui.use(["element", "form", "okLayer", "okUtils"], function () {
+            let form = layui.form;
+            let okLayer = layui.okLayer;
+            let okUtils = layui.okUtils;
+
+            form.on("submit(edit)", function (data) {
+                data.field["idsStr"] = initData;
+                okUtils.ajax("../../order.action?op=multiSend", "post", data.field, true).done(function (response) {
+                    console.log(response);
+                    okLayer.greenTickMsg("编辑成功", function () {
+                        parent.layer.close(parent.layer.getFrameIndex(window.name));
+                    });
+                }).fail(function (error) {
+                    console.log(error)
+                });
+                return false;
+            });
+
+        })
+
+
+    </script>
+
+
+</body>
+</html>

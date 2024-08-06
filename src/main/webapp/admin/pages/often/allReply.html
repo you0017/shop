@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>一键回复</title>
+    <script src="../../js/vue.js"></script>
+    <script src="../../js/axios.js"></script>
+    <script src="../../js/jquery-1.9.1.js"></script>
+    <!--    <link href="../../layui/css/layui.css">-->
+    <!--    <link rel="stylesheet" href="../../css/oksub.css">-->
+    <link href="//unpkg.com/layui@2.9.13/dist/css/layui.css" rel="stylesheet">
+    <script src="//unpkg.com/layui@2.9.13/dist/layui.js"></script>
+    <script src="../../ckeditor/ckeditor.js"></script>
+</head>
+<body>
+<div id="app">
+
+    <!--    回复模板-->
+    <div class="layui-form-item">
+        <label class="layui-form-label">选择模板:</label>
+        <div class="layui-input-inline">
+            <select lay-search="cs" v-model="selectedOption">
+                <option v-for="(option, index) in options">{{option.recorde_value}}</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button type="submit" class="layui-btn" @click="allCommentReplay()" lay-filter="demo1">立即回复</button>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+    let vm = new Vue({
+        el: '#app',
+        data: {
+            selectedOption: '',
+            options: [],
+            editor1: '',
+            idsStr: ''
+        },
+        methods: {
+            initTemplate() {
+                axios.get('../../comment.action?op=getBackCommentTemplate').then(response => {
+                    data = response.data;
+                    if (data.code == 1) {
+                        vm.$data.options = data.obj;
+                    }
+                })
+            },
+
+            allCommentReplay() {
+                var params = new URLSearchParams()
+                params.append("op", "allCommentReplay")
+                params.append("selectedOption", this.selectedOption)
+                params.append("idsStr", this.idsStr)
+                axios.post('../../comment.action', params).then(response => {
+                    data = response.data;
+                    if (data.code == 1) {
+                        alert(data.obj)
+                        parent.layer.close(parent.layer.getFrameIndex(window.name));
+                    } else {
+                        alert(data.obj)
+                    }
+                })
+            },
+            initIdsStr() {
+                let queryString = window.location.search.substring(1);
+                let dataIndex = queryString.indexOf('data=');
+
+                if (dataIndex !== -1) {
+                    // 找到 data 参数后，获取其值
+                    let idsStr = queryString.substring(dataIndex + 5); // 跳过 'data=' 这部分
+                    // 如果需要，可以进一步处理 idsStr，比如使用 split(',') 来分割多个 ID
+                    console.log(idsStr); // 输出 idsStr 的值
+                    this.idsStr = idsStr;
+                }
+            },
+
+        },
+        mounted: function () {
+            CKEDITOR.replace('editor1');   // 初始化编辑器
+            this.initTemplate();           // 初始化回复模板
+            // 初始化 idsStr
+            this.initIdsStr();
+        }
+    });
+</script>
+</body>
+</html>

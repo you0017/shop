@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>退货详情</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--form表单-->
+    <form class="layui-form ok-form" lay-filter="filter">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">退货单号</label>
+            <div class="layui-input-block">
+                <input type="text" name="return_id" placeholder="加载失败" autocomplete="on" class="layui-input"
+                       lay-verify="required" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">退货人ID</label>
+            <div class="layui-input-block">
+                <input type="text" name="customer_id" placeholder="加载失败" autocomplete="on" class="layui-input"
+                       lay-verify="required" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">商品名</label>
+            <div class="layui-input-block">
+                <input type="text" name="product_name" placeholder="加载失败" autocomplete="on" class="layui-input"
+                       lay-verify="required" readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款原因</label>
+            <div class="layui-input-block">
+                <textarea name="return_reason" placeholder="初始化错误" class="layui-textarea" ></textarea>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">数量</label>
+            <div class="layui-input-block">
+                <input type="text" name="return_quantity" placeholder="加载失败" autocomplete="on" class="layui-input"
+                       readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">申请时间</label>
+            <div class="layui-input-block">
+                <input type="text" name="return_date" placeholder="加载失败" autocomplete="on" class="layui-input"
+                       readonly>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">退款金额</label>
+            <div class="layui-input-block">
+                <input type="text" name="refund_amount" placeholder="加载失败" autocomplete="on" class="layui-input"
+                       readonly>
+            </div>
+        </div>
+
+
+
+
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+<!--                        <button class="layui-btn" lay-submit lay-filter="okView">立即提交</button>-->
+                        <button class="layui-btn layui-btn-warm" lay-submit lay-filter="replyComment">通过</button>
+                        <button class="layui-btn layui-btn-danger" lay-submit lay-filter="notReply">不通过</button>
+                    </div>
+                </div>
+
+
+    </form>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    let initData;
+
+    function initForm(data) {
+        // 取id   发请求匹配 order_id  返回  渲染
+        let jsonString = JSON.stringify(data);
+        initData = JSON.parse(jsonString);
+        // 加加加
+        cause=data.cause
+        id = data.id;
+        user_id=data.user_id
+        total_fee=data.total_fee
+        create_time=data.create_time  // 提交订单
+        if ( data.pay_time!=null && typeof data.pay_time!=undefined ) {
+            pay_time=data.pay_time  // 支付时间
+        }else {
+            pay_time="还没支付"
+        }
+
+        if ( data.consign_time!=null && typeof data.consign_time!=undefined ) {
+            consign_time=data.consign_time  // 发货
+        }else {
+            consign_time='还未发货'
+        }
+
+        if ( data.end_time!=null && typeof data.end_time!=undefined ) {
+            end_time=data.end_time  // 结束|收货
+        }else {
+            end_time='已发货'
+        }
+        contact=data.contact
+        address=data.address
+        mobile=data.mobile
+
+        // tracking_company=data.tracking_company
+    }
+
+    layui.use(["element", "form", "laydate", "okLayer", "okUtils"], function () {
+        let form = layui.form;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        okLoading.close();
+        form.val("filter", initData);
+
+        laydate.render({elem: "#birthday", type: "datetime"});
+
+
+        form.on("submit(okView)", function (data) {
+            okUtils.ajax("../../order.action?op=okView", "post", data.field, true).done(function (response) {
+                console.log(response);
+                okLayer.greenTickMsg("操作成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        })
+
+    })
+</script>
+</body>
+</html>

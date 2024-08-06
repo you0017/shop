@@ -1,0 +1,133 @@
+[
+
+    {
+        "title": "客服消息",
+        "href": "pages/1111.html",
+        "fontFamily": "ok-icon",
+        "icon": "&#xe667;",
+        "spread": true,
+        "isCheck": true
+    },
+
+    {
+        "title": "商品管理",
+        "href": "",
+        "icon": "&#xe665;",
+        "spread": false,
+        "children": [
+            {
+                "title": "商品列表",
+                "href": "pages/often/product.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "商品发布",
+                "href": "pages/often/product_add.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+
+            {
+                "title": "用户评论",
+                "href": "pages/often/product_comment_details.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "库存管理",
+                "href": "pages/often/inventory.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            }
+        ]
+
+    },
+    {
+        "title": "交易管理",
+        "href": "",
+        "icon": "&#xe66f;",
+        "spread": false,
+        "children": [
+            {
+                "title": "所有订单",
+                "href": "pages/order/order_list.html",
+                "fontFamily": "layui-icon",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "发货处理",
+                "href": "pages/order/order_consign_change.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "退货处理",
+                "href": "pages/goodsBack/goods_back.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "回收站",
+                "href": "pages/order/order_recover.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            }
+        ]
+    },
+    {
+        "title": "财务列表",
+        "href": "",
+        "icon": "&#xe66f;",
+        "spread": false,
+        "children": [
+            {
+                "title": "订单统计",
+                "href": "pages/chart/chart1_order.html",
+                "fontFamily": "layui-icon",
+                "icon": "&#xe62e;",
+                "spread": false
+            },
+            {
+                "title": "销售统计",
+                "href": "pages/chart/chart1.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            }
+        ]
+    },
+
+    {
+        "title": "人员管理",
+        "href": "",
+        "icon": "&#xe66f;",
+        "spread": false,
+        "children": [
+            {
+                "title": "用户列表",
+                "href": "pages/member/user-list.html",
+                "fontFamily": "layui-icon",
+                "icon": "&#xe62e;",
+                "spread": false
+            }
+        ]
+    },
+    {
+        "title": "系统管理",
+        "href": "",
+        "fontFamily": "ok-icon",
+        "icon": "&#xe68a;",
+        "spread": false,
+        "children": [
+            {
+                "title": "模板设置",
+                "href": "pages/system/setup.html",
+                "icon": "&#xe62e;",
+                "spread": false
+            }
+
+        ]
+    }
+
+]

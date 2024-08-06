@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>退货处理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--模糊搜索区域-->
+    <div class="ok-body">
+        <!--form表单-->
+        <form class="layui-form ok-form" lay-filter="filter">
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">id</label>
+                <div class="layui-input-block">
+                    <input type="text" name="id" placeholder="请输入账号" autocomplete="on" class="layui-input"
+                           lay-verify="required" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">金额</label>
+                <div class="layui-input-block">
+                    <input type="text" name="total_fee" placeholder="" autocomplete="on" class="layui-input"
+                           lay-verify="required" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">用户id</label>
+                <div class="layui-input-block">
+                    <input type="text" name="user_id" placeholder="" autocomplete="on" class="layui-input"
+                           lay-verify="required" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">下单时间</label>
+                <div class="layui-input-block">
+                    <input type="text" name="create_time" placeholder="订单时间错误" autocomplete="on" class="layui-input"
+                           lay-verify="required" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">支付时间</label>
+                <div class="layui-input-block">
+                    <input type="text" name="pay_time" placeholder="还没支付" autocomplete="on" class="layui-input"
+                           lay-verify="email" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">发货时间</label>
+                <div class="layui-input-block">
+                    <input type="text" name="consign_time" placeholder="还没发货" autocomplete="on" class="layui-input"
+                           lay-verify="email" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">完成时间</label>
+                <div class="layui-input-block">
+                    <input type="text" name="end_time" placeholder="未收货" autocomplete="on" class="layui-input"
+                           lay-verify="email" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">收货人</label>
+                <div class="layui-input-block">
+                    <input type="text" name="contact" placeholder="" autocomplete="on" class="layui-input"
+                           lay-verify="email" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">收货地址</label>
+                <div class="layui-input-block">
+                    <input type="text" name="address" placeholder="" autocomplete="on" class="layui-input"
+                           lay-verify="email" readonly>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">收货人号码</label>
+                <div class="layui-input-block">
+                    <input type="text" name="mobile" placeholder="" autocomplete="on" class="layui-input"
+                           lay-verify="email" readonly>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="../../lib/layui/layui.js"></script>
+<script>
+
+</script>
+</body>
+</html>

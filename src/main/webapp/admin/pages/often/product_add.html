@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/layui/2.6.8/css/layui.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/layui/2.6.8/layui.js"></script>
+    <script src="../../ckeditor/ckeditor.js"></script>
+</head>
+<style>
+    .my {
+
+        font-weight: 600;
+        line-height: 22px;
+        background-color: #f5f5f5;
+        padding: 6px 0 6px 12px;
+        border-bottom: 1px solid #e7e7e7;
+
+    }
+</style>
+<body>
+<div class="layui-form">
+
+    <h3 class="my">分类选择</h3>
+    <div class="layui-form-item">
+        <label class="layui-form-label">种类</label>
+        <div class="layui-input-inline">
+            <select id="province"  name="category" lay-filter="province" lay-search >
+                <option></option>
+            </select>
+        </div>
+
+        <label class="layui-form-label">品牌</label>
+        <div class="layui-input-inline">
+            <select id="city" name="brand" lay-filter="city" lay-search >
+                <option></option>
+            </select>
+        </div>
+
+        <label class="layui-form-label">规格</label>
+        <div class="layui-input-inline">
+            <select id="district" name="spec" lay-filter="district" lay-search>
+                <option></option>
+            </select>
+        </div>
+    </div>
+
+    <h3 class="my">基本信息</h3>
+    <div class="layui-form-item">
+        <label class="layui-form-label">产品名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" placeholder="请输入产品名称" autocomplete="on" class="layui-input"
+                   lay-verify="required">
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">产品价格</label>
+        <div class="layui-input-block">
+            <input type="text" name="price" placeholder="请输入产品价格" autocomplete="on" class="layui-input"
+                   lay-verify="required">
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">数量</label>
+        <div class="layui-input-block">
+            <input type="text" name="stock" placeholder="请输入入库数量" autocomplete="on" class="layui-input"
+                   lay-verify="required">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">是否上架</label>
+        <div class="layui-input-block">
+            <select name="status">
+                <option value="1">上架</option>
+                <option value="0">不上架</option>
+            </select>
+        </div>
+    </div>
+
+    <h3 class="my">详情和图片</h3>
+    <div class="layui-form-item">
+        <label class="layui-form-label">描述</label>
+        <div class="layui-input-block">
+            <textarea id="editor1" name="editor1" placeholder="请输入商品描述" class="layui-textarea"></textarea>
+        </div>
+    </div>
+
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">商品logo</label>
+        <div class="layui-input-block">
+            <input style="display: none" name="pic" id="onePic">
+            <button type="button" class="layui-btn" id="ID-upload-demo-btn">
+                <i class="layui-icon layui-icon-upload"></i> 商品logo
+            </button>
+            <div style="width: 132px;">
+                <div class="layui-upload-list">
+                    <img class="layui-upload-img" id="ID-upload-demo-img" style="width: 100%; height: 92px;">
+                    <div id="ID-upload-demo-text"></div>
+                </div>
+                <div class="layui-progress layui-progress-big" lay-showPercent="yes" lay-filter="filter-demo">
+                    <div class="layui-progress-bar" lay-percent=""></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button class="layui-btn" lay-submit lay-filter="edit">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+
+</div>
+
+
+<script>
+    CKEDITOR.replace('editor1');
+</script>
+
+<script>
+    layui.use(['form', 'jquery', 'upload', 'element', 'util'], function () {
+        var form = layui.form;
+        var $ = layui.jquery;
+        let upload = layui.upload;
+        let element = layui.element;
+        let util = layui.util;
+        // 点击按钮获取数据
+        window.onload = function () {
+            // 发送Ajax请求获取省份数据
+            $.ajax({
+                url: '../../item.action?op=getAllKind', // 替换为实际的后台接口地址
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var provinceSelect = $('#province');
+                    provinceSelect.empty(); // 清空省份下拉框
+                    var my = data.data;
+                    $.each(my, function (index, item) {
+                        provinceSelect.append('<option value="' + item.recorde_value + '">' +
+                            item.recorde_value + '</option>');
+                    });
+                    form.render('select'); // 重新渲染省份下拉框
+                }
+            });
+        }
+
+        // 监听种类下拉框变化事件
+        form.on('select(province)', function (data) {
+            var provinceValue = data.value;
+            // 发送Ajax请求获取城市数据
+            $.ajax({
+                url: '../../item.action?op=getBrand', // 替换为实际的后台接口地址，并传递省份参数
+                type: 'post',
+                dataType: 'json',
+                data: {provinceValue: provinceValue},
+                success: function (data) {
+                    var citySelect = $('#city');
+                    var districtSelect = $('#district');
+                    citySelect.empty(); // 清空城市下拉框
+                    districtSelect.empty(); // 清空区县下拉框
+                    var my = data.data;
+                    $.each(my, function (index, item) {
+                        citySelect.append('<option value="' + item.recorde_value + '">' +
+                            item.recorde_value + '</option>');
+                    });
+                    form.render('select'); // 重新渲染城市下拉框
+                }
+            });
+        });
+
+        // 监听品牌下拉框变化事件
+        form.on('select(city)', function (data) {
+            var cityValue = data.value;
+            // 发送Ajax请求获取区县数据
+            $.ajax({
+                url: '../../item.action?op=getConfig', // 替换为实际的后台接口地址，并传递城市参数
+                type: 'post',
+                dataType: 'json',
+                data: {cityValue: cityValue},
+                success: function (data) {
+                    var districtSelect = $('#district');
+                    districtSelect.empty(); // 清空区县下拉框
+                    var my = data.data;
+                    $.each(my, function (index, item) {
+                        districtSelect.append('<option value="' + item.recorde_value + '">' +
+                            item.recorde_value + '</option>');
+                    });
+                    form.render('select'); // 重新渲染区县下拉框
+                }
+            });
+        });
+
+
+        // // 添加图片时候的单图片上传
+        var uploadInst = upload.render({
+            elem: '#ID-upload-demo-btn',
+            url: '../../item.action?op=uploadInst', // 实际使用时改成您自己的上传接口即可。
+            done: function (res) {  // 上传完毕回调
+                document.getElementById("onePic").value = res.data;   // 设置前面的隐藏表单的值
+                if (res.code > 0) {
+                    return layer.msg('上传失败');
+                }
+                console.log(res); // 输出服务器返回的数据
+                $('#ID-upload-demo-text').html(''); // 置空上传失败的状态
+            },
+            before: function (obj) {
+                // 预读本地文件示例，不支持ie8
+                obj.preview(function (index, file, result) {
+                    $('#ID-upload-demo-img').attr('src', result); // 图片链接（base64）
+                });
+
+                element.progress('filter-demo', '0%'); // 进度条复位
+                layer.msg('上传中', {icon: 16, time: 0});
+            },
+            error: function () {
+                // 演示失败状态，并实现重传
+                var demoText = $('#ID-upload-demo-text');
+                demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+                demoText.find('.demo-reload').on('click', function () {
+                    uploadInst.upload();
+                });
+            },
+            // 进度条
+            progress: function (n, elem, e) {
+                element.progress('filter-demo', n + '%'); // 可配合 layui 进度条元素使用
+                if (n == 100) {
+                    layer.msg('上传完毕', {icon: 1});
+                }
+            }
+        });
+
+        // 监听提交
+        form.on("submit(edit)", function (data) {
+            let province = document.getElementById('province');   // 种类框
+            let city = document.getElementById("city");    // 品牌框
+            let district = document.getElementById("district");    // 规格框
+            if ( '' == province.value || '' == city.value || '' == district.value) {
+                layer.msg('请完整填写规格等信息');
+                return false;
+            }
+        var editor = CKEDITOR.instances['editor1'];
+        var editor_content = editor.getData();
+        data.field.editor1 = editor_content;
+        $.ajax({
+            type: "POST",
+            url: '../../item.action?op=addProduct',
+            dataType: 'json',
+            data: data.field,
+            success: function (data) {
+               if (data.code == 0) {
+                   alert("添加成功")
+                   location.reload();
+               } else {
+                   layer.msg("操作失败");
+               }
+            },
+            error: function(xhr, status, error) {
+                // 请求失败后的回调函数
+                console.log('Error: ' + error);
+                layer.msg('请求失败');
+            }
+        })
+        return false;
+    });
+
+    });
+</script>
+</body>
+</html>

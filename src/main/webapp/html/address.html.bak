@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container1 {
+            margin: 20px;
+        }
+
+        .container1 button, .container1 a {
+            text-decoration: none;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .container1 button:hover {
+            background-color: #0056b3;
+        }
+
+        #addressList .address-item {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin: 10px 0;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .address-item .default-tag {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #28a745;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .form-container1 {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 24px;
+        }
+
+        .form-container1 h2 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        .form-container1 .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .form-container1 .form-row label {
+            width: 30%;
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .form-container1 .form-row input, .form-container1 .form-row select {
+            width: 70%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-container1 .form-row.full-width {
+            flex-basis: 100%;
+        }
+
+        .form-container1 .form-row input:focus, .form-container1 .form-row select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        .form-container1 button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        .form-container1 button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id='container'></div>
+    <div id="app">
+        <div class="container1">
+            <button @click="showForm()">新增收货地址</button>
+            <a href="map.html">地图</a>
+            <div id="addressList">
+                <!-- Address items will be injected here by JavaScript -->
+                <div class="address-item" v-for="(item,index) in userAddress">
+                    <p>收货人: {{item.contact}}</p>
+                    <p>所在地区: {{item.province+item.city+item.town}}</p>
+                    <p>详细地址: {{item.street}}</p>
+                    <p>手机号码: {{item.mobile}}</p>
+                    <div class="default-tag" v-if="item.is_default==1">默认地址</div>
+                    <button @click="modify(index)">编辑</button>
+                    <button @click="deleteAddress(item.id)">删除</button>
+                    <button @click="setDefault(item.id)" v-if="item.is_default!=1">设为默认</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="addressForm" class="overlay">
+            <div class="form-container1">
+                <form id="form" class="form-container1">
+                    <h2>收货地址</h2>
+                    <span class="close-btn" @click="closeForm()">&times;</span>
+                    <div class="form-row">
+                        <label for="name">收货人：</label>
+                        <input type="text" id="name" required v-model.trim="modifyAddress.contact">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="province">省：</label>
+                        <select id="province" v-model="selectedProvince" @change="cityChange" required>
+                            <option value="">--请选择--</option>
+                            <option v-for="(item, index) in address" :key="item.provinceCode" :value="index">{{ item.provinceName }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="city">市：</label>
+                        <select id="city" v-model="selectedCity" @change="townChange" required>
+                            <option value="">--请选择--</option>
+                            <option v-for="(item, index) in selectedProvinceCities" :key="item.cityCode" :value="index">{{ item.cityName }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <label for="region">区：</label>
+                        <select id="region" v-model="selectedArea" required>
+                            <option value="">--请选择--</option>
+                            <option v-for="(item, index) in selectedCityAreas" :key="item.areaCode" :value="index">{{ item.areaName }}</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row full-width">
+                        <label for="address">详细地址：</label>
+                        <input type="text" id="address" required v-model.trim="modifyAddress.street">
+                    </div>
+
+                    <div class="form-row">
+                        <label for="mobile">手机号码：</label>
+                        <input type="text" id="mobile" required v-model.trim="modifyAddress.mobile">
+                    </div>
+
+                    <div class="form-row full-width">
+                        <label>
+                            <input type="checkbox" id="isDefault" @change="modifyAddress.isDefault = modifyAddress.isDefault === '1' ? '0' : '1';">
+                            <label for="isDefault">设为默认地址</label>
+                        </label>
+                    </div>
+
+                    <div class="form-row full-width">
+                        <label>
+                            <input type="button" value="使用定位地址" @click="useDefault">
+                        </label>
+                    </div>
+
+                    <button type="button" @click="addAddress()">保存收货地址</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+
+<script src="assets/js/axios-0.18.0.js"></script>
+<script src="assets/js/vue.js"></script>
+
+<script type="text/javascript">
+    //这里放自己的安全密钥
+    window._AMapSecurityConfig = {
+        securityJsCode:'a3a9ac5ed90c4e2e303186c28d8455fc',
+    }
+</script>
+<!--    这里调用高德地图API-->
+<script type="text/javascript" src="https://webapi.amap.com/maps?v=2.0&key=c00de9c157273258ee76e7e2b7014305"></script>
+
+<script>
+
+    var app = new Vue({
+        el:"#app",
+        data:{
+            autoAddress:'',//高德地图的地址
+            address:[], //多选框地址
+            selectedProvince:'',//选的省
+            selectedCity:'',//市
+            selectedArea:'',//区
+            userAddress:[], //展示的地址
+            modifyAddress:{
+                id:'',
+                province: '',
+                city: '',
+                town: '',
+                street:'',
+                contact: '',
+                mobile:'',
+                isDefault:'0'
+            },//用于修改和新增的临时地址
+        },
+        computed: {
+            //计算属性，每次for循环就从数组里面根据对应的地址名取值
+            selectedProvinceCities() {
+                if (this.selectedProvince !== '') {
+                    this.modifyAddress.province = this.address[this.selectedProvince].provinceName;
+                    return this.address[this.selectedProvince].mallCityList;
+                } else {
+                    return [];
+                }
+            },
+            selectedCityAreas() {
+                if (this.selectedProvince !== '' && this.selectedCity !== '') {
+                    this.modifyAddress.city = this.address[this.selectedProvince].mallCityList[this.selectedCity].cityName;
+                    return this.address[this.selectedProvince].mallCityList[this.selectedCity].mallAreaList;
+                } else {
+                    return [];
+                }
+            }
+        },
+        methods:{
+            cityChange(){
+                //省改变，市默认变
+                this.selectedCity = '0';
+            },
+            townChange(){
+                //市变，区默认变
+                this.selectedArea = '0'
+            },
+            //修改界面自动展示原数据
+            modify(id){
+                this.showForm();
+                address = this.userAddress[id];//点击的地址
+                this.modifyAddress.id = address.id;
+
+                this.selectedProvince = this.findIndexByProperty(this.address, 'provinceName', address.province);
+                this.selectedCity = this.findIndexByProperty(this.address[this.selectedProvince].mallCityList, 'cityName', address.city);
+                this.selectedArea = this.findIndexByProperty(this.address[this.selectedProvince].mallCityList[this.selectedCity].mallAreaList, 'areaName', address.town);
+                this.modifyAddress.street = address.street;
+                this.modifyAddress.contact = address.contact;
+                this.modifyAddress.mobile = address.mobile;
+                this.modifyAddress.isDefault = this.isDefault;
+            },
+            // 根据属性名提取值的函数
+            extractValuesByProperty(array, property) {
+                return array.map(obj => obj[property]);
+            },
+            //使用定位地址
+            useDefault(){
+                const result = this.splitAddress(this.autoAddress);
+                this.selectedProvince = this.findIndexByProperty(this.address, 'provinceName', result.province);
+                this.selectedCity = this.findIndexByProperty(this.address[this.selectedProvince].mallCityList, 'cityName', result.city);
+                this.selectedArea = this.findIndexByProperty(this.address[this.selectedProvince].mallCityList[this.selectedCity].mallAreaList, 'areaName', result.district);
+                this.modifyAddress.street = result.detailedAddress;
+            },
+            splitAddress(address) {
+                // 正则表达式，用于匹配省、市、区
+                const regex = /^(.*省)(.*市)(.*区)(.*)$/;
+                const match = address.match(regex);
+
+                if (match) {
+                    return {
+                        province: match[1],
+                        city: match[2],
+                        district: match[3],
+                        detailedAddress: match[4].trim()  // 去除详细地址前后的空格
+                    };
+                }
+            },
+            // 根据属性值查找索引的函数
+            findIndexByProperty(array, property, value) {
+                return array.findIndex(obj => obj[property] === value);
+            },
+            //添加地址或修改
+            addAddress(){
+                this.modifyAddress.town = this.address[this.selectedProvince].mallCityList[this.selectedCity].mallAreaList[this.selectedArea].areaName;
+                if (this.modifyAddress.province==''||this.modifyAddress.city==''||this.modifyAddress.town==''
+                ||this.modifyAddress.street==''||this.modifyAddress.contact==''||this.modifyAddress.mobile==''){
+                    alert("请填写完整");
+                    return;
+                }
+                var params = new URLSearchParams();
+                params.append("province",this.modifyAddress.province);
+                params.append("city",this.modifyAddress.city);
+                params.append("town",this.modifyAddress.town);
+                params.append("street",this.modifyAddress.street);
+                params.append("contact",this.modifyAddress.contact);
+                params.append("mobile",this.modifyAddress.mobile);
+                params.append("isDefault",this.modifyAddress.isDefault);
+                if (this.modifyAddress.id != undefined && this.modifyAddress.id != ''){
+                    params.append("id",this.modifyAddress.id);
+                    axios.post("address.action?op=modifyAddress",params).then(result=>{
+                        if (result.data.code==0){
+                            alert("未知异常:"+result.data.error);
+                        }else{
+                            //关闭表单
+                            this.closeForm();
+                            //清空临时数据
+                            this.selectedProvince='';//选的省
+                            this.selectedCity='';//市
+                            this.selectedArea='';//区
+                            this.modifyAddress.province='';
+                            this.modifyAddress.city= '';
+                            this.modifyAddress.town='';
+                            this.modifyAddress.street='';
+                            this.modifyAddress.contact= '';
+                            this.modifyAddress.mobile='';
+                            this.modifyAddress.isDefault='0';
+                            //刷新页面
+                            this.getAllAddress().then((result1)=>{
+                                if (result1.data.code == 1){
+                                    this.userAddress = result1.data.obj;
+                                }
+                            })
+                        }
+                    })
+                }else{
+                    axios.post("address.action?op=addAddress",params).then(result=>{
+                        if (result.data.code==0){
+                            alert("未知异常:"+result.data.error);
+                        }else{
+                            //关闭表单
+                            this.closeForm();
+                            //刷新页面
+                            this.getAllAddress().then((result1)=>{
+                                if (result1.data.code == 1){
+                                    this.userAddress = result1.data.obj;
+                                }
+                            })
+                        }
+                    })
+                }
+            },
+            //删除地址
+            deleteAddress(index) {
+                var params = new URLSearchParams();
+                params.append("id",index);
+                axios.post("address.action?op=deleteAddress",params).then(result=>{
+                    if (result.data.code==0){
+                        alert("未知异常:"+result.data.error);
+                    }else{
+                        //刷新页面
+                        this.getAllAddress().then((result1)=>{
+                            if (result1.data.code == 1){
+                                this.userAddress = result1.data.obj;
+                            }
+                        })
+                    }
+                })
+            },
+            //添加地址的表
+            showForm() {
+                document.getElementById('addressForm').style.display = 'flex';
+            },
+            closeForm() {
+                document.getElementById('addressForm').style.display = 'none';
+                //清空临时数据
+                this.selectedProvince='';//选的省
+                this.selectedCity='';//市
+                this.selectedArea='';//区
+                this.modifyAddress.province='';
+                this.modifyAddress.city= '';
+                this.modifyAddress.town='';
+                this.modifyAddress.street='';
+                this.modifyAddress.contact= '';
+                this.modifyAddress.mobile='';
+                this.modifyAddress.isDefault='0';
+            },
+            //设置默认地址
+            setDefault(id){
+                var params = new URLSearchParams();
+                params.append("id",id);
+                axios.post("address.action?op=setDefault",params).then(result=>{
+                    if (result.data.code==0){
+                        alert("未知异常:"+result.data.error);
+                    }else{
+                        //刷新页面
+                        this.getAllAddress().then((result1)=>{
+                            if (result1.data.code == 1){
+                                this.userAddress = result1.data.obj;
+                            }
+                        })
+                    }
+                })
+            },
+            //地址数组
+            fetchAddressData() {
+                axios.get('assets/json/address.json')
+                    .then(response => {
+                        this.address = response.data;
+                    })
+                    .catch(error => {
+                        console.error("Error fetching address data:", error);
+                    });
+            },
+            //获取用户地址
+            getAllAddress(){
+                return axios.post("address.action?op=getAllAddress");
+            }
+        },
+        mounted(){
+            //地址数组
+            this.fetchAddressData();
+
+            axios.all([this.getAllAddress()]).then(axios.spread((result1)=>{
+                if (result1.data.code == 1){
+                    this.userAddress = result1.data.obj;
+                }else{
+                    alert(result1.data.error);
+                }
+            }))
+        }
+    });
+
+    //高德地图
+    var map = new AMap.Map('container', {
+        resizeEnable: true
+    });
+    AMap.plugin('AMap.Geolocation', function() {
+        var geolocation = new AMap.Geolocation({
+            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+            timeout: 10000,          //超过10秒后停止定位，默认：5s
+            buttonPosition:'RB',    //定位按钮的停靠位置
+            buttonOffset: new AMap.Pixel(10, 20),//定位按钮与设置的停靠位置的偏移量，默认：Pixel(10, 20)
+            zoomToAccuracy: true,   //定位成功后是否自动调整地图视野到定位点
+            needAddress: true,
+        });
+        map.addControl(geolocation);
+        geolocation.getCurrentPosition(function(status,result){
+            if(status=='complete'){
+                //返回的所有结果
+                console.log(result);
+                // 详细地址
+                console.log("详细位置"+result.formattedAddress);
+                //给vue
+                app.$data.autoAddress = result.formattedAddress;
+            }
+        });
+    });
+</script>
+</html>

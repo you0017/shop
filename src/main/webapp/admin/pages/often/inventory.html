@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>库存管理</title>
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css">
+    <script type="text/javascript" src="../../lib/layui/layui.js"></script>
+    <style>
+        .my {
+
+            font-weight: 600;
+            line-height: 22px;
+            background-color: #f5f5f5;
+            padding: 6px 0 6px 12px;
+            border-bottom: 1px solid #e7e7e7;
+
+        }
+    </style>
+</head>
+<body>
+
+
+<div class="layui-tab">
+    <ul class="layui-tab-title">
+        <li class="layui-this">库存预警</li>
+        <li>预警信息</li>
+    </ul>
+
+
+    <div class="layui-tab-content">
+        <div class="layui-tab-item layui-show">
+            <!--            库存管理-->
+            <table id="tableId" lay-filter="tableId"></table>
+        </div>
+        <!--        预警信息-->
+        <div class="layui-tab-item">
+
+            <form class="layui-form ok-form" lay-filter="filter">
+
+                <h3 class="my">预警信息</h3>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">地点:</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="place" name="place" placeholder="请输入预警地点" autocomplete="on"
+                               class="layui-input" lay-verify="required">
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">姓名:</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="warn_name" name="warn_name" placeholder="姓名" autocomplete="on"
+                               class="layui-input"  lay-verify="required">
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">电子邮箱:</label>
+                    <div class="layui-input-block">
+                        <input type="text" id="qq_mail" name="qq_mail" placeholder="邮箱" autocomplete="on"
+                               class="layui-input"  lay-verify="email">
+                    </div>
+                </div>
+
+
+                <h3 class="my">预警规则</h3>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">开始时间</label>
+                    <div class="layui-input-block">
+                        <div class="layui-input-inline ">
+                            <input type="text" name="start_time" class="layui-input"  lay-verify="required"
+                                   id="ID-laydate-demo" placeholder="yyyy-MM-dd">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <label class="layui-form-label">重复时间</label>
+                    <div class="layui-input-block">
+                        <div class="layui-input-inline">
+                            <select name="week" >
+                                <option value="2" selected>周一</option>
+                                <option value="3">周二</option>
+                                <option value="4">周三</option>
+                                <option value="5">周四</option>
+                                <option value="6">周五</option>
+                                <option value="7">周六</option>
+                                <option value="1">周日</option>
+                            </select>
+                        </div>
+                        <div class="layui-input-inline">
+                            <input type="text" name="specific_time" class="layui-input"
+                                   id="ID-laydate-type-time" placeholder="HH:mm:ss">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="send">提交</button>
+                        <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // 库存管理
+    layui.use(["table", "form", "laydate", "okLayer", "okUtils", "okMock", "element", "jquery"], function () {
+        var element = layui.element;
+        let table = layui.table;
+        let form = layui.form;
+        let util = layui.util;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        let okMock = layui.okMock;
+        var $ = layui.jquery;
+
+
+        // 时间工具渲染
+
+
+        laydate.render({
+            elem: '#ID-laydate-demo'
+        });
+
+        // 时间选择器
+        laydate.render({
+            elem: '#ID-laydate-type-time',
+            type: 'time'
+        });
+
+
+        // 库存列表table
+        let test1Tabel = table.render({
+            elem: "#tableId",
+            url: okMock.api.listStock,
+            limit: 20,
+            page: true,
+            even: true,
+            toolbar: true,
+            toolbar: "#test1toolbarTpl",
+            size: "lg",
+            cols: [[
+                {type: "checkbox", fixed: "left"},
+                {field: "id", title: "产品编码", width: 80, sort: true},
+                {field: "name", title: "产品名称",},
+                // {field: "image", title: "产品LOGO",  templet: "#logoTpl"},
+                // {field: "price", title: "产品价格", width: 120},
+                {field: "sold", title: "销量", sort: true},
+                {field: "status", title: "上架状态", templet: "#shagnjiaTpl"},
+                {field: "stock", title: "现货数量", sort: true},
+                {
+                    field: "stock_down", title: "库存下限", sort: true, templet: function (d) {
+                        if (d.warning_value_status == 2) {
+                            return '-';
+                        } else {
+                            return d.stock_down;
+                        }
+                    }
+                },
+                {
+                    field: "stock_up", title: "库存上限", sort: true, templet: function (d) {
+                        if (d.warning_value_status == 2) {
+                            return '-';
+                        } else {
+                            return d.stock_up;
+                        }
+                    }
+                },
+                {field: "", title: "预警状态", sort: true, templet: "#statusTpl"},
+                {title: "操作", width: 180, align: "center", fixed: "right", templet: "#test1operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                console.log(res, curr, count)
+            }
+        });
+
+        // 预警信息table
+
+        // 监听工具条
+        table.on("tool(tableId)", function (obj) {
+            let data = obj.data;
+            switch (obj.event) {
+                case "editWarning":
+                    editWarning(data);
+                    break;
+                case "replenishment":
+                    replenishment(data);
+                    break;
+            }
+        });
+        // test1的头工具
+        table.on("toolbar(tableId)", function (obj) {
+            switch (obj.event) {
+                case "allWarn":
+                    allWarn(obj);
+                    break;
+                case "batchWarn":
+                    batchWarn(obj);
+                    break;
+            }
+        });
+
+        // 设置预警信息和时间
+        form.on("submit(send)", function (data) {
+            const currentDate = new Date();
+            const dateOnly = currentDate.toISOString().split('T')[0];
+            let date = new Date(dateOnly);
+            var t = data.field.start_time
+            t = new Date(t).getTime();
+            if ( t< date.getTime()) {
+                layer.msg("开始时间不能小于当前时间");
+                return false;
+            }
+            $.ajax({
+                url: '../../inventory.action?op=setTime', // 替换为实际的后台接口地址
+                type: 'post',
+                dataType: 'json',
+                data: data.field,
+                success: function (data) {
+                    var temp = data.data;
+                    if (data.code == 0) {
+                        layer.msg("设置成功");
+                    }
+                }
+            });
+            return false;
+        })
+
+        // 设置库存上下限
+        function editWarning(data) {
+            // okLayer.open("设置预警值", "inventory_editWarning.html", "50%", "50%", function (layero) {
+            okLayer.open("设置预警值", "inventory_restrictions.html", "40%", "40%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+            }, function () {
+                test1Tabel.reload();
+            })
+        }
+
+        // 补货按钮
+        function replenishment(data) {
+            okLayer.open("更新库存", "inventory_replenishment.html", "40%", "40%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+            }, function () {
+                test1Tabel.reload();
+            })
+        }
+
+
+        // 一键设置预警值
+        function allWarn(data) {
+            okLayer.open("一键设置预警值", "inventory_allWarn.html", "40%", "40%", function (layero) {
+                    // let idsStr = okUtils.tableBatchCheck(table);
+                    // data.addData(idsStr)
+                    // let iframeWin = window[layero.find("iframe")[0]["name"]];
+                    // iframeWin.initForm(data);
+                }, function () {
+                    test1Tabel.reload();
+                }
+            )
+        }
+
+        //  批量预警
+        function batchWarn() {
+            let idsStr = okUtils.tableBatchCheck(table);
+            idsStr = idsStr;
+            if (idsStr == null || idsStr.length <= 0) {
+                return okLayer.msg("请选择要预警的产品");
+            }
+            okLayer.open("批量设置预警值", "inventory_batchWarn.html", "40%", "40%", function (layero) {
+                    let iframeWin = window[layero.find("iframe")[0]["name"]];
+                    iframeWin.initForm(idsStr);
+                }, function () {
+                    test1Tabel.reload();
+                }
+            )
+        }
+
+    });
+
+
+</script>
+
+<!-- 表test1的操作 -->
+<script type="text/html" id="test1operationTpl">
+
+    <i class="layui-btn layui-btn-xs" lay-event="editWarning">设置</i>
+    <i class="layui-btn layui-btn-xs" lay-event="replenishment">补货</i>
+</script>
+
+<!-- 表test1的头工具操作 -->
+<script type="text/html" id="test1toolbarTpl">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="allWarn">一键预警</button>
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="batchWarn">批量预警</button>
+    </div>
+</script>
+
+
+<script type="text/html" id="logoTpl">
+    <image src="{{d.image}}" style="width: 100px; height: auto;"/>
+</script>
+
+<script type="text/html" id="statusTpl">
+    <!--    如果现货大于上限-->
+    <!--    <span class="layui-btn layui-btn-danger layui-btn-xs layui-btn-radius">111</span>-->
+
+    {{#  if(d.warning_value_status ==2 ){ }}
+    <span class="layui-btn layui-btn-danger layui-btn-xs layui-btn-radius">动态预警</span>
+    <!-- 如果现货大于上限-->
+    {{#  } else if(d.stock > d.stock_up){ }}
+    <span class="layui-btn layui-btn-danger layui-btn-xs layui-btn-radius">高库存</span>
+    <!-- 如果现货小于下限-->
+    {{#  } else if(d.stock <= d.stock_down) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs layui-btn-radius">低库存</span>
+    {{#  } else  { }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs layui-btn-radius">正常</span>
+    {{#  } }}
+</script>
+
+<script type="text/html" id="shagnjiaTpl">
+    {{#  if(d.status == 1){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">上架中</span>
+    {{#  } else if(d.status == 0) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未上架</span>
+    {{#  } }}
+</script>
+
+
+</body>
+</html>

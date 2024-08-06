@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人信息更改</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <h1>个人信息更改</h1>
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">用户名</label>
+                <input type="text" id="username" name="username" placeholder="输入你的用户名" required v-model="username">
+            </div>
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" placeholder="输入你的密码" required v-model="password">
+            </div>
+            <div class="form-group">
+                <label for="name">名称</label>
+                <input type="text" id="name" name="name" placeholder="输入你的名称" required v-model="name">
+            </div>
+            <button type="button" @click="modify()">提交更改</button>
+        </form>
+    </div>
+</div>
+</body>
+
+<script src="assets/js/axios-0.18.0.js"></script>
+<script src="assets/js/vue.js"></script>
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            isLogin:false,
+            userId:'',
+            username:'',
+            password:'',
+            name:''
+        },
+        methods:{
+            modify(){
+                var params = new URLSearchParams();
+                params.append("username",this.username);
+                params.append("password",this.password);
+                params.append("name",this.name);
+                axios.post("user.action?op=modify",params).then(result=>{
+                    if (result.data.code==0){
+                        alert(result.data.error);
+                    }else{
+                        alert("修改成功");
+                        window.location.href='index.html';
+                    }
+                })
+            },
+            //登出
+            logout(){
+                axios("user.action?op=logout").then(result=>{
+                    if (result.data.code==0){
+                        this.isLogin=false;
+                    }else{
+                        this.isLogin=false;
+                    }
+                })
+            }
+        },
+        mounted(){
+            //检查登录状态
+            axios.post("user.action?op=checkLogin").then(result=>{
+                if (result.data.code==0){
+                    this.isLogin = false;
+                    return;
+                }else{
+                    this.isLogin = true;
+                    this.userId = result.data.obj.id;
+                    this.username = result.data.obj.accountname;
+                    this.name = result.data.obj.name
+                }
+            })
+        }
+    })
+</script>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>设置预警值</title>
+    <link rel="stylesheet" href="../../lib/layui/css/layui.css">
+
+</head>
+<body>
+<!--<table class="layui-hide" id="editWarining" lay-filter="MyEditWarining"></table>-->
+<br>
+<br>
+
+<form class="layui-form"  >
+    <div class="layui-form-item">
+        <label class="layui-form-label">商品名</label>
+        <div class="layui-input-inline">
+            <input type="text" id="name" name='name' lay-verify="required" placeholder="请输入" autocomplete="off" class="layui-input" >
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <div class="layui-inline">
+            <label class="layui-form-label">库存</label>
+            <div class="layui-input-inline layui-input-wrap">
+                <input type="text" id="stock" name="stock" placeholder="库存" class="layui-input">
+            </div>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">预警值</label>
+        <div class="layui-col-xs4 layui-input-inline">
+            <input type="number" name="warning" lay-affix="number" placeholder="设置精度为整数" step="1" lay-precision="2" class="layui-input" min="1">
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <button type="submit" class="layui-btn" lay-submit lay-filter="editWarning">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+
+
+<script src="../../lib/layui/layui.js"></script>
+<script>
+
+    var initData;
+
+    // 设置预警弹出层的数据初始化
+    function initForm(data) {
+        console.log(data);
+        let jsonString = JSON.stringify(data);
+        initData = JSON.parse(jsonString);
+        document.getElementById("name").value=initData.name;
+        document.getElementById("stock").value=initData.stock;
+    }
+
+
+    layui.use(["element", "form", "laydate", "okLayer", "okUtils", "upload","jquery"], function () {
+        var table = layui.table;
+        let form = layui.form;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        var upload = layui.upload
+        var element = layui.element;
+        var $ = layui.jquery;
+        var layer = layui.layer;
+
+        // 监听提交
+        form.on("submit(editWarning)", function (data) {
+            console.log(data);
+            okUtils.ajax("../../inventory.action?op=editWarning", "post", data.field, true).done(function (response) {
+                okLayer.greenTickMsg("编辑成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        });
+
+    });
+</script>
+</body>
+</html>

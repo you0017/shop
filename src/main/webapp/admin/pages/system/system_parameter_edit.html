@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>编辑前台参数</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--form表单-->
+    <form class="layui-form ok-form" lay-filter="filter">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="recorde_name" placeholder="请输入产品名称" autocomplete="on" class="layui-input"
+                       lay-verify="required">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">值</label>
+            <div class="layui-input-block">
+                <input type="text" name="recorde_value" placeholder="请输入产品价格" autocomplete="on" class="layui-input"
+                       lay-verify="required">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">是否立即启用</label>
+            <div class="layui-input-block">
+                <select name="recorde_status">
+                    <option value="0" selected>禁用</option>
+                    <option value="1">启用</option>
+                </select>
+                <!--				<input type="checkbox" name="status" lay-skin="switch" lay-text="启用|停用" checked value="0">-->
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="editSystemParameter">立即提交</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+
+
+    </form>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    let initData;
+
+    function initForm(data) {
+        let jsonString = JSON.stringify(data);
+        initData = JSON.parse(jsonString);
+        id = data.id;
+        recorde_name=data.recorde_name
+        recorde_value=data.recorde_value
+        recorde_status=data.recorde_status
+
+    }
+
+    layui.use(["element", "form", "laydate", "okLayer", "okUtils"], function () {
+        let form = layui.form;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        okLoading.close();
+        form.val("filter", initData);
+
+        laydate.render({elem: "#birthday", type: "datetime"});
+
+        form.verify({
+            birthdayVerify: [/^((((1[6-9]|[2-9]\d)\d{2})-(0?[13578]|1[02])-(0?[1-9]|[12]\d|3[01]))|(((1[6-9]|[2-9]\d)\d{2})-(0?[13456789]|1[012])-(0?[1-9]|[12]\d|30))|(((1[6-9]|[2-9]\d)\d{2})-0?2-(0?[1-9]|1\d|2[0-8]))|(((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00))-0?2-29-))(\s(([01]\d{1})|(2[0123])):([0-5]\d):([0-5]\d))?$/, '日期格式不正确']
+        });
+
+        // 修改参数
+        form.on("submit(editSystemParameter)", function (data) {
+            data.field.id = id;
+            okUtils.ajax("../../frontEdit.action?op=editSystemParameter", "post", data.field, true).done(function (response) {
+                console.log(response);
+                okLayer.greenTickMsg("操作成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        })
+
+
+    })
+</script>
+</body>
+</html>

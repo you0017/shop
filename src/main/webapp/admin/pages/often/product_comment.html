@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>产品评分</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <style>
+
+
+    </style>
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <!--模糊搜索区域-->
+<!--    <div class="layui-row">-->
+<!--        <form class="layui-form ok-search-form">-->
+<!--            <div class="layui-form-item">-->
+
+<!--                <div class="layui-inline">-->
+<!--                    <label class="layui-form-label">开始日期</label>-->
+<!--                    <div class="layui-input-inline">-->
+<!--                        <input type="text" class="layui-input" placeholder="开始日期" autocomplete="off" id="startTime"-->
+<!--                               name="startTime">-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="layui-inline">-->
+<!--                    <label class="layui-form-label">截止日期</label>-->
+<!--                    <div class="layui-input-inline">-->
+<!--                        <input type="text" class="layui-input" placeholder="截止日期" autocomplete="off" id="endTime"-->
+<!--                               name="endTime">-->
+<!--                    </div>-->
+<!--                </div>-->
+
+
+<!--                <div class="layui-inline">-->
+<!--                    <label class="layui-form-label">ID</label>-->
+<!--                    <div class="layui-input-inline">-->
+<!--                        <input type="text" class="layui-input" placeholder="请输入查询产品ID" autocomplete="off"-->
+<!--                               name="id">-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="layui-inline">-->
+<!--                    <label class="layui-form-label">名称</label>-->
+<!--                    <div class="layui-input-inline">-->
+<!--                        <input type="text" class="layui-input" placeholder="请输入查询产品名" autocomplete="off"-->
+<!--                               name="name">-->
+<!--                    </div>-->
+<!--                </div>-->
+
+
+<!--                <div class="layui-inline">-->
+<!--                    <div class="layui-input-inline">-->
+<!--                        <button class="layui-btn" lay-submit="" lay-filter="search">-->
+<!--                            <i class="layui-icon">&#xe615;</i>-->
+<!--                        </button>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--            </div>-->
+<!--        </form>-->
+<!--    </div>-->
+
+    <!--数据表格-->
+    <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+    layui.use(["table", "form", "laydate", "okLayer", "okUtils", "okMock", "rate", "jquery"], function () {
+        let table = layui.table;
+        let form = layui.form;
+        let util = layui.util;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        let okMock = layui.okMock;
+        var rate = layui.rate;
+        let $ = layui.jquery;
+        okLoading.close();
+        util.fixbar({});
+
+        laydate.render({elem: "#startTime", type: "datetime"});
+        laydate.render({elem: "#endTime", type: "datetime"});
+
+        // 评分函数
+        let rater = function (name, x, count) {
+            rate.render({
+                elem: '#'+name+count,
+                value: x,
+                readonly: true
+            })
+        }
+
+
+        let articleTable = table.render({
+            elem: "#tableId",
+
+            url: okMock.api.listProduct,
+
+            limit: 20,
+            page: true,
+            even: true,
+            toolbar: "#toolbarTpl",
+            size: "lg",
+            cols: [[
+                // {type: "checkbox", fixed: "left"},
+                {field: "id", title: "商品ID", width: 90, sort: true},
+                {field: "name", title: "产品名称", width: 150},
+                // {field: "logo", title: "产品LOGO", width: 150, templet: "#logoTpl"},
+                {field: "image", title: "产品LOGO", width: 150, templet: "#logoTpl"},
+                {field: "price", title: "产品价格",sort:true, width: 130},
+                // {field: "stock", title: "产品数量", width: 200,},
+                {field: "sold", title: "产品销量", sort:true, width: 130,},
+                {field: "status", title: "是否上架", width: 200, templet: "#statusTpl"},
+                {field: "rating", title: "评分", width: 200, sort:true,templet: function(d){
+                        // 在这里添加rate组件
+                        var rating = d.rating;
+                        var rateHtml = '';
+                        for (var i = 1; i <= 5; i++) {
+                            if (i <= rating) {
+                                //  layui-bg-orange
+                                rateHtml += '<span class="layui-icon layui-icon-rate-solid "></span>';
+                            } else {
+                                rateHtml += '<span class="layui-icon layui-icon-rate"></span>';
+                            }
+                        }
+                        return rateHtml;
+                    }
+                   },
+                // {title: "操作", width: 100, align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                console.log(res)
+                $.each(res.data, function(index, item){
+                    rater('rating', item.rating, index)
+                });
+            }
+        });
+
+
+
+        // console.log(data); // 输出表格数据
+
+
+
+        form.on("submit(search)", function (data) {
+            articleTable.reload({
+                url: "../../item.action?op=fuzzyQuery",
+                where: data.field,
+                page: {curr: 1}
+            });
+            return false;
+        });
+
+        table.on("toolbar(tableFilter)", function (obj) {
+            switch (obj.event) {
+                case "batchEnabled":
+                    batchEnabled();
+                    break;
+                case "batchDisabled":
+                    batchDisabled();
+                    break;
+                case "batchDelete":
+                    batchDelete();
+                    break;
+                case "add":
+                    add();
+                    break;
+            }
+        });
+
+        table.on("tool(tableFilter)", function (obj) {
+            let data = obj.data;
+            switch (obj.event) {
+                case "updateById":
+                    updateById(data);
+                    break;
+                case "deleteById":
+                    deleteById(data.id);
+                    break;
+            }
+        });
+
+
+
+
+
+
+
+        function add() {
+            okLayer.open("添加产品", "product-add.html", "90%", "90%", null, function () {
+                articleTable.reload();
+            })
+        }
+
+
+        function updateById(data) {
+            okLayer.open("编辑产品", "product-edit.html?", "90%", "90%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+                articleTable.reload();
+            }, function () {
+                articleTable.reload();
+            })
+        }
+
+
+        function deleteById(id) {
+            okLayer.confirm("确定要删除吗？", function () {
+                // let idsStr = okUtils.tableBatchCheck(table);
+                var limit = articleTable.config.limit;
+                var page = articleTable.config.page.curr;
+                okUtils.ajax("../../item.action?op=deleteById", "post", {
+                    idsStr: id,
+                    limit: limit,
+                    page: page
+                }).done(function (response) {
+                    okUtils.tableSuccessMsg(response.msg);
+                }).fail(function (error) {
+                    console.log(error);
+                });
+            })
+        }
+    })
+</script>
+<!-- 头工具栏模板 -->
+<script type="text/html" id="toolbarTpl">
+    <!--    <div class="layui-btn-container">-->
+    <!--        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="batchEnabled">批量上架</button>-->
+    <!--        <button class="layui-btn layui-btn-sm layui-btn-warm" lay-event="batchDisabled">批量下架</button>-->
+    <!--        <button class="layui-btn layui-btn-sm layui-btn-danger" lay-event="batchDelete">批量删除</button>-->
+    <!--        <button class="layui-btn layui-btn-sm" lay-event="add">添加产品</button>-->
+    <!--    </div>-->
+</script>
+<!-- 行工具栏模板 -->
+<script type="text/html" id="operationTpl">
+<!--    <a href="javascript:" title="编辑" lay-event="updateById"><i class="layui-icon">&#xe642;</i></a>-->
+<!--    <a href="javascript:" title="删除" lay-event="deleteById"><i class="layui-icon">&#xe640;</i></a>-->
+
+<a href="javascript:" title="查看详情" lay-event="look" aria-label="图标: eye" tabindex="-1" title="查看详情"
+   class="anticon anticon-eye ant-input-password-icon">
+    <svg viewBox="64 64 896 896" focusable="false" class="" data-icon="eye" width="1em" height="1em"
+         fill="currentColor" aria-hidden="true">
+        <path d="M942.2 486.2C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 0 0 0 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3 7.7-16.2 7.7-35 0-51.5zM512 766c-161.3 0-279.4-81.8-362.7-254C232.6 339.8 350.7 258 512 258c161.3 0 279.4 81.8 362.7 254C791.5 684.2 673.4 766 512 766zm-4-430c-97.2 0-176 78.8-176 176s78.8 176 176 176 176-78.8 176-176-78.8-176-176-176zm0 288c-61.9 0-112-50.1-112-112s50.1-112 112-112 112 50.1 112 112-50.1 112-112 112z"></path>
+    </svg>
+</a>
+
+
+</script>
+
+<script type="text/html" id="logoTpl">
+    <image src="{{d.image}}" style="width: 80px; height: auto;"/>
+</script>
+
+<!--评分模板-->
+<!--<script type="text/html" id="rateTpl">-->
+<!--    <div>{{ d.rating }}</div>-->
+<!--</script>-->
+
+<script type="text/html" id="rateTpl">
+    <div class="layui-btn-container">
+        <div id="rating{{d.rating}}"> </div>
+    </div>
+</script>
+
+
+<!--<script type="text/html" id="urlTpl">-->
+<!--    <a href="{{d.url}}" target="_blank">{{d.url}}</a>-->
+<!--</script>-->
+
+<script type="text/html" id="statusTpl">
+    {{#  if(d.status == 1){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">上架中</span>
+    {{#  } else if(d.status == 0) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未上架</span>
+    {{#  } }}
+</script>
+
+</body>
+</html>

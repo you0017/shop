@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人资料展示</title>
+    <style>
+        .profile-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .profile-info {
+            text-align: center;
+        }
+        .avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .profile-info p {
+            margin: 10px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+            text-align: center;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: calc(100% - 120px);
+            display: inline-block;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .form-group button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #0056b3;
+        }
+        .form-group img {
+            margin-left: 10px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="profile-container">
+        <h2>个人资料</h2>
+        <div class="profile-info">
+            <img id="avatar-img" :src="user.image" alt="头像" class="avatar">
+            <p>用户名: {{user.accountname}}</p>
+            <p>邮箱: {{user.email}}</p>
+            <p>手机: {{user.mobile}}</p><button @click="sendCode()">获取验证码</button>
+        </div>
+        <div class="form-group">
+            <label for="new-password">修改密码</label>
+            <label>验证码</label>
+            <input type="password" placeholder="输入验证码" v-model="code">
+            <input type="password" id="new-password" placeholder="输入新密码" v-model="password">
+            <button @click="modify()">修改密码</button>
+        </div>
+        <div class="form-group">
+            <label for="new-avatar">修改头像</label>
+            <input type="file" id="new-avatar" accept="image/*">
+            <img id="avatar-preview" alt="新头像预览">
+            <button @click="registerImg()">上传新头像</button>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/axios-0.18.0.js"></script>
+<script src="assets/js/vue.js"></script>
+<script>
+    var app = new Vue({
+        el:"#app",
+        data:{
+            isLogin:false,
+            user:{},
+            code:'',
+            password:'',
+        },
+        methods:{
+            registerImg(){
+                // 创建FormData对象
+                var params = new FormData();
+
+                // 获取文件输入框中的图片文件
+                var fileInput = document.getElementById('new-avatar');
+                var file = fileInput.files[0];
+                if (file==undefined||file==null){
+                    alert("请选择图片");
+                    return;
+                }
+
+                // 将图片文件添加到formData中
+                params.append("image",file);
+
+                // 发送请求
+                axios.post('user.action?op=modifyImg', params, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                })
+                    .then(result => {
+                        if (result.data.code == 0){
+                            alert(result.data.error);
+
+                        }else{
+                            this.user.image = result.data.obj;
+                        }
+                    })
+            },
+            modify(){
+                if (this.code==''||this.password==''){
+                    alert("密码或验证码不能为空");
+                    return;
+                }
+                var params = new URLSearchParams();
+                params.append("code",this.code);
+                params.append("password",this.password);
+                axios.post("user.action?op=modify",params).then(result=>{
+                    if (result.data.code==0){
+                        alert(result.data.error);
+                    }else{
+                        alert("修改成功，请重新登录");
+                        window.location.href = "login.html";
+                    }
+                });
+            },
+            //发送验证码
+            sendCode(){
+                axios.post("user.action?op=sendCode&mobile="+this.user.mobile).then(result=>{
+                    if (result.data.code==1){
+                        alert("验证码已发送")
+                    }else{
+                        alert("验证码发送失败");
+                    }
+                })
+            },
+            checkLogin(){
+                return axios.post("user.action?op=checkLogin");
+            }
+        },
+        mounted(){
+            axios.all([this.checkLogin()]).then(axios.spread((result1)=>{
+                if(result1.data.code==0){
+                    alert("未登录");
+                }else{
+                    this.isLogin = true;
+                    this.user = result1.data.obj;
+                }
+            }))
+        }
+    })
+
+    document.getElementById('new-avatar').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('avatar-preview');
+                preview.src = e.target.result;
+                preview.style.display = 'inline-block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+</script>
+</body>
+</html>

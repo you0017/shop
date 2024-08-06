@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>聊天</title>
+    <style>
+        .chat-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .chat-list {
+            width: 30%;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .chat-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .chat-list li {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .chat-list li.active {
+            background-color: #f0f0f0;
+        }
+
+        .chat-window {
+            width: 70%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .messages {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .my-message {
+            text-align: right;
+            color: blue;
+        }
+
+        .their-message {
+            text-align: left;
+            color: green;
+        }
+
+        .message-input {
+            padding: 10px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+    </style>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios.js"></script>
+</head>
+<body>
+<div id="vm">
+    <div class="chat-container">
+
+        <div class="chat-list">
+            <ul>
+                <li v-for="(chat, index) in obj"  @click="getChatMessage(index)" :class="{'active': selectedChatIndex === index}">
+                    <div class="chat-name">{{ chat[0].sender }}</div>
+<!--                    <div class="last-message">{{ chat.messages[chat.messages.length - 1]?.text }}</div>-->
+                </li>
+            </ul>
+        </div>
+
+
+        <div class="chat-window">
+
+            <div class="messages">
+                <div v-for="(item, index) in man" :class="{'my-message': item.sender == '店家', 'their-message': item.sender != '店家'}">
+                    {{item.sender}}::{{ item.time }}
+                    <br>
+                    {{ item.message }}
+                    <hr>
+
+                </div>
+            </div>
+
+
+            <div class="message-input">
+                <input type="text" v-model="newMessage" @keyup.enter="sendMessage">
+                <button @click="sendMessage">发送</button>
+            </div>
+
+
+        </div>
+
+
+    </div>
+</div>
+
+</body>
+
+<script>
+    let vm = new Vue({
+        el:'#vm',
+        data: {
+            obj:{},
+            man:{},
+            selectedChatIndex:"",
+            newMessage:'',
+        },
+        methods: {
+            initWebSocket(){
+                var ws = new WebSocket('ws://localhost:81/shop_war/echo');
+                ws.onopen = function () {
+                    console.log('WebSocket 连接已经建立。');
+                    //ws.send('Hello, server!');
+                };
+                ws.onmessage = function (event) {
+                    console.log('收到服务器消息：', event.data);
+                };
+                ws.onerror = function (event) {
+                    console.error('WebSocket 连接出现错误：', event);
+                };
+                ws.onclose = function () {
+                    console.log('WebSocket 连接已经关闭。');
+                };
+                window.onbeforeunload = function(){
+                    vm.$data.ws.close();
+                }
+                this.ws = ws;
+            },
+            getChatMessage(index){
+                this.man = this.obj[index];
+                this.selectedChatIndex = index;
+            },
+            // 发送消息
+            sendMessage(){
+                var params = new URLSearchParams()
+                params.append("op", "setChatMessage")
+                params.append("newMessage", this.newMessage)
+                params.append("sender", this.man[0].sender)
+                axios.post('../chat.action', params).then(response => {
+
+                })
+            }
+
+
+        },
+        mounted:function () {
+            this.initWebSocket();
+            axios.get('../chat.action?op=getAllChat').then(response => {
+                data = response.data;
+                if (data.code == 1) {
+                    this.obj = data.obj;
+                }
+            })
+
+        }
+
+
+    });
+
+
+</script>
+</html>

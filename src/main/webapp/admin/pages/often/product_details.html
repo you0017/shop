@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>评论详情</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+    <script src="../../ckeditor/ckeditor.js"></script>
+</head>
+<body>
+
+<div class="ok-body">
+    <form class="layui-form ok-form" lay-filter="filter">
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户名</label>
+            <div class="layui-input-block">
+                <input type="text" id="accountname" name="accountname" required lay-verify="required" placeholder="初始化错误" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">评论内容</label>
+            <div class="layui-input-block">
+                <textarea id="comment" name="comment" placeholder="加载失败" class="layui-textarea" readonly></textarea>
+            </div>
+        </div>
+
+        <div class="layui-form-item">
+            <label class="layui-form-label">评论时间</label>
+            <div class="layui-input-block">
+                <input type="text" id="created_at" name="created_at" placeholder="加载失败" autocomplete="on" class="layui-input" readonly>
+            </div>
+        </div>
+
+
+        <div class="layui-form-item" >
+            <label class="layui-form-label">* 商家回复</label>
+            <div class="layui-input-block" >
+                <textarea id="editor1" name="editor1" placeholder="请输入商品描述" class="layui-textarea"></textarea>
+            </div>
+        </div>
+
+<!--        <div class="layui-form-item">-->
+<!--            <div class="layui-input-block">-->
+<!--                <button class="layui-btn layui-btn-warm" lay-submit lay-filter="replyComment">通过</button>-->
+<!--                <button class="layui-btn layui-btn-danger" lay-submit lay-filter="notReply">不通过</button>-->
+<!--            </div>-->
+<!--        </div>-->
+
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="shopComment">立即回复</button>
+                <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+
+<script>
+    CKEDITOR.replace('editor1');
+</script>
+
+<script>
+    let initData;
+
+
+    function removeHtmlTags(str) {
+        return str.replace(/<[^>]*>?/gm, '');
+    }
+
+    function initForm(data) {
+        let jsonString = JSON.stringify(data);
+        initData = JSON.parse(jsonString);
+        document.getElementById("accountname").value = data.accountname;
+        document.getElementById("comment").value = removeHtmlTags(data.comment);
+        document.getElementById("created_at").value = data.created_at;
+        comment = removeHtmlTags(data.comment);
+        accountname = data.accountname
+        item_id = data.item_id;    // 商品号
+        created_at = removeLastTwoChars(data.created_at);  // 评论时间
+        user_id = data.user_id  // 评论的id号
+        id = data.id;
+        created_at = created_at;
+
+        let editorInit = CKEDITOR.instances['editor1'];
+        editorInit.setData(data.shop_backcomment);
+    }
+
+    function removeLastTwoChars(str) {
+        return str.slice(0, -2);
+    }
+
+    layui.use(["element", "form", "laydate", "okLayer", "okUtils", "upload"], function () {
+        let form = layui.form;
+        let laydate = layui.laydate;
+        let okLayer = layui.okLayer;
+        let okUtils = layui.okUtils;
+        var upload = layui.upload
+        var element = layui.element;
+        var $ = layui.$;
+        var layer = layui.layer;
+        okLoading.close();
+        form.val("filter", initData);
+        laydate.render({elem: "#birthday", type: "datetime"});
+
+        form.verify({
+            birthdayVerify: [/^((((1[6-9]|[2-9]\d)\d{2})-(0?[13578]|1[02])-(0?[1-9]|[12]\d|3[01]))|(((1[6-9]|[2-9]\d)\d{2})-(0?[13456789]|1[012])-(0?[1-9]|[12]\d|30))|(((1[6-9]|[2-9]\d)\d{2})-0?2-(0?[1-9]|1\d|2[0-8]))|(((1[6-9]|[2-9]\d)(0[48]|[2468][048]|[13579][26])|((16|[2468][048]|[3579][26])00))-0?2-29-))(\s(([01]\d{1})|(2[0123])):([0-5]\d):([0-5]\d))?$/, '日期格式不正确']
+        });
+
+
+        // 审核通过
+        form.on("submit(replyComment)", function (data) {
+            data.field.item_id = item_id;
+            data.field.ueer_id = user_id;
+            data.field.id = id;
+            var editor = CKEDITOR.instances['editor1'];
+            var editor_content = editor.getData();
+            data.field.editor1 = editor_content;
+            okUtils.ajax("../../comment.action?op=replyComment", "post", data.field, true).done(function (response) {
+                console.log(response);
+                okLayer.greenTickMsg("审核成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        });
+
+
+        // 审核不通过
+        form.on("submit(notReply)", function (data) {
+            data.field.item_id = item_id;
+            data.field.id = id;
+            okUtils.ajax("../../comment.action?op=notReplyComment", "post", data.field, true).done(function (response) {
+                console.log(response);
+                okLayer.greenTickMsg("审核成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        });
+
+
+        // 商家回复一个评论
+        form.on("submit(shopComment)", function (data) {
+            data.field.id = id;
+            var editor = CKEDITOR.instances['editor1'];
+            var editor_content = editor.getData();
+            data.field.editor1 = editor_content;
+            okUtils.ajax("../../comment.action?op=shopComment", "post", data.field, true).done(function (response) {
+                console.log(response);
+                okLayer.greenTickMsg("操作成功", function () {
+                    parent.layer.close(parent.layer.getFrameIndex(window.name));
+                });
+            }).fail(function (error) {
+                console.log(error)
+            });
+            return false;
+        })
+    })
+</script>
+</body>
+</html>

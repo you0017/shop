@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>前台设置</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../css/oksub.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/layui/2.6.8/css/layui.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/layui/2.6.8/layui.js"></script>
+</head>
+<body>
+<div class="ok-body">
+    <div class="layui-form">
+
+        <h3 class="my">分类选择</h3>
+        <div class="layui-form-item">
+            <label class="layui-form-label">种类</label>
+            <div class="layui-input-inline">
+                <select id="province" name="category" lay-filter="province" lay-search>
+                    <option></option>
+                </select>
+            </div>
+        </div>
+
+    </div>
+
+    <!--数据表格-->
+    <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+</div>
+<!--js逻辑-->
+<script src="../../lib/layui/layui.js"></script>
+<script>
+
+
+    layui.use(["element", "table", "form", "laydate", "okLayer", "okUtils", "okMock", 'jquery'], function () {
+        var table = layui.table;
+        var form = layui.form;
+        var util = layui.util;
+        var laydate = layui.laydate;
+        var okLayer = layui.okLayer;
+        var okUtils = layui.okUtils;
+        var okMock = layui.okMock;
+        var $ = layui.jquery;
+
+        $(document).ready(function() {
+            console.log('onload');
+            // 发送Ajax请求获取省份数据
+            $.ajax({
+                url: '../../frontEdit.action?op=getAllKind', // 替换为实际的后台接口地址
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    var provinceSelect = $('#province');
+                    provinceSelect.empty(); // 清空省份下拉框
+                    var my = data.data;
+                    $.each(my, function (index, item) {
+                        provinceSelect.append('<option value="' + item.recorde_name + '">' +
+                            item.recorde_name + '</option>');
+                    });
+                    form.render('select'); // 重新渲染省份下拉框
+                }
+            });
+        })
+
+        var articleTable = table.render({
+            elem: "#tableId",
+            url: okMock.api.article.list,
+            limit: 20,
+            page: true,
+            even: true,
+            toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                // {type: "checkbox", fixed: "left"},
+                {field: "id", title: "序号", width: 280, sort: true},
+                {field: "recorde_name", title: "键名", width: 350},
+                {field: "recorde_value", title: "值", width: 250,},
+                {
+                    field: "recorde_status", title: "状态", width: 100, templet: function (d) {
+                        if (d.recorde_status == 1) {
+                            return '<button class="layui-btn layui-btn-xs layui-btn-normal" >正在使用</button>'
+                        } else {
+                            return ' <button class="layui-btn layui-btn-xs layui-btn-warm" >未使用</button>'
+                        }
+                    }
+                },
+                {title: "操作", align: "center", fixed: "right", templet: "#operationTpl"}
+            ]],
+            done: function (res, curr, count) {
+                console.log(res, curr, count)
+            }
+        });
+
+        form.on("select(province)", function (data) {
+            var name = data.value;
+            articleTable.reload({
+                url: "../../frontEdit.action?op=getKindName",
+                where: {name:name},
+                page: {curr: 1}
+            });
+            return false;
+            // $.ajax({
+            //     url: '../../frontEdit.action?op=getKindName', // 替换为实际的后台接口地址
+            //     type: 'post',
+            //     dataType: 'json',
+            //     data: {name: name},
+            //     success: function (data) {
+            //
+            //     }
+            // })
+        })
+
+        table.on("toolbar(tableFilter)", function (obj) {
+            switch (obj.event) {
+                case "addSystemParameter":
+                    addSystemParameter();
+                    break;
+            }
+        });
+
+        table.on("tool(tableFilter)", function (obj) {
+            var data = obj.data;
+            switch (obj.event) {
+                case "edit":
+                    edit(data);
+                    break;
+                case "del":
+                    del(data.id);
+                    break;
+            }
+        });
+
+        // 删除
+        function del(id) {
+            okLayer.confirm("确定要删除吗？", function () {
+                let limit = articleTable.config.limit;
+                let page = articleTable.config.page.curr;
+                okUtils.ajax("../../frontEdit.action?op=deleteSystemParameter", "post", {
+                    idsStr: id,
+                    limit: limit,
+                    page: page
+                }, true).done(function (response) {
+                    console.log(response);
+                    okUtils.tableSuccessMsg(response.msg);
+                }).fail(function (error) {
+                    console.log(error)
+                });
+            })
+        }
+
+        function addSystemParameter() {
+            okLayer.open("添加前台参数", "system_parameter_add.html", "40%", "40%", null, function () {
+                articleTable.reload();
+            })
+        }
+
+        function edit(data) {
+            okLayer.open("编辑前台参数", "system_parameter_edit.html", "40%", "40%", function (layero) {
+                let iframeWin = window[layero.find("iframe")[0]["name"]];
+                iframeWin.initForm(data);
+            }, function () {
+                articleTable.reload();
+            })
+        }
+
+
+    })
+</script>
+<!-- 头工具栏模板 -->
+<script type="text/html" id="toolbarTpl">
+    <div class="layui-btn-container">
+        <button class="layui-btn layui-btn-sm layui-btn-normal" lay-event="addSystemParameter">添加设置</button>
+    </div>
+</script>
+<!-- 链接模板 -->
+<script type="text/html" id="urlTpl">
+    <a href="{{d.url}}" target="_blank">{{d.url}}</a>
+</script>
+<!-- 是否指顶模板
+    <input type="checkbox" name="isTop" value="{{d.isTop}}" lay-skin="switch" lay-text="是|否" {{ d.isTop== true ? 'checked' : ''}}>
+-->
+<script type="text/html" id="topTpl">
+    {{#  if(d.isTop == true){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">已置顶</span>
+    {{#  } else if(d.isTop == false) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未置顶</span>
+    {{#  } }}
+</script>
+
+<script type="text/html" id="statusTpl">
+    {{#  if(d.status == true){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">已发布</span>
+    {{#  } else if(d.status == false) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">未发布</span>
+    {{#  } }}
+</script>
+<!-- 行工具栏模板 -->
+<script type="text/html" id="operationTpl">
+    <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="edit">编辑</button>
+    <button class="layui-btn layui-btn-xs layui-btn-warm" lay-event="del">删除</button>
+</script>
+</body>
+</html>

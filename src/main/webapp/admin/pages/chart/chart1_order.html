@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>柱状图</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="stylesheet" href="../../lib/loading/okLoading.css"/>
+    <link href="//unpkg.com/layui@2.9.14/dist/css/layui.css" rel="stylesheet">
+    <script src="//unpkg.com/layui@2.9.14/dist/layui.js"></script>
+    <script type="text/javascript" src="../../lib/loading/okLoading.js"></script>
+    <script src="../../js/vue.js"></script>
+    <script src="../../js/jquery-1.9.1.js"></script>
+    <script src="../../js/axios.js"></script>
+
+</head>
+<body>
+
+<div id="vm">
+    <div id="main" style="width: 100%;height:400px;margin-top: 50px;"></div>
+    <h3>订单详情</h3>
+    <!--    <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>-->
+</div>
+
+<div class="layui-tab" lay-filter="test-handle">
+    <ul class="layui-tab-title">
+        <li class="layui-this" lay-id="11">订单</li>
+        <li lay-id="22">退单</li>
+    </ul>
+
+    <div class="layui-tab-content">
+        <!--  订单-->
+        <div class="layui-tab-item layui-show">
+            <table class="layui-hide" id="tableId" lay-filter="tableFilter"></table>
+            <!--            <table class="layui-hide" id="tableIdOrder" lay-filter="tableFilterOrder"></table>-->
+        </div>
+
+        <!--订退单-->
+        <div class="layui-tab-item">
+            <table class="layui-hide" id="tableIdBackOrder" lay-filter="tableFilterBackOrder"></table>
+        </div>
+    </div>
+
+</div>
+
+
+<script src="../../lib/echarts/echarts.min.js"></script>
+
+<script>
+    layui.use(['table', 'dropdown', 'jquery'], function () {
+        var table = layui.table;
+        var dropdown = layui.dropdown;
+        var $ = layui.jquery;
+        var orderTable = table.render({
+            elem: '#tableId',
+            url: "../../order.action?op=getAllOrderData",
+            limit: 20,
+            page: true,
+            toolbar: true,
+            toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                {field: "id", title: "订单号", sort: true},
+                {field: "total_fee", title: "订单金额",  sort: true},
+                {field: "status", title: "状态",  templet: "#statusTpl"},
+                {field: "create_time", title: "订单时间",  sort: true},
+                {
+                    field: "pay_time", title: "付款时间",  sort: true, templet: function (d) {
+                        if (typeof d.pay_time == "undefined") {
+                            return '<p href="/detail/' + d.id + '" class="layui-table-link">' + '未付款' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.pay_time + '</p>'
+                    }
+                },
+                {
+                    field: "consign_time", title: "发货时间",  sort: true, templet: function (d) {
+                        if (d.status == 1 || d.status == 2) {
+                            return '<p class="layui-table-link"> 未发货 </p>'
+                        }
+                        // 返回模板内容
+                        return '<p class="layui-table-link">' + d.consign_time + '</p>'
+                    }
+                },
+                {
+                    field: "contact", title: "收货人", templet: function (d) {
+                        if (typeof d.contact == "undefined") {
+                            return '<p  class="layui-table-link">' + '收货人未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.contact + '</p>'
+                    }
+                },
+                {
+                    field: "mobile", title: "电话",  templet: function (d) {
+                        if (typeof d.mobile == "undefined") {
+                            return '<p  class="layui-table-link">' + '电话未填写' + '</p>'
+                        }
+                        // 返回模板内容
+                        return '<p href="/detail/' + d.id + '" class="layui-table-link">' + d.mobile + '</p>'
+                    }
+                },
+            ]],
+            done: function (res, curr, count) {
+                console.info(res, curr, count);
+            }
+        });
+
+        let backTable = table.render({
+            elem: '#tableIdBackOrder',
+            url: "../../order.action?op=getAllBackOrderData",
+            limit: 20,
+            page: true,
+            toolbar: true,
+            toolbar: "#toolbarTpl",
+            size: "sm",
+            cols: [[
+                {field: "return_id", title: "退款单号",  },
+                {field: "product_name", title: "退款商品", },
+                {field: "refund_amount", title: "申请金额", sort: true},
+                {field: "return_reason", title: "申请原因", sort: true},
+                {field: "return_date", title: "申请时间", sort: true},
+                {field: "back_type", title: "状态", width: 100, templet: function (d) {
+                        if (d.back_type == 1) {
+                            return '<button class="layui-btn layui-btn-xs">仅退款</button>'
+                        }
+                        // 返回模板内容
+                        return '<button class="layui-btn layui-btn-xs">退款退货</button>'
+                    }
+                },
+                {field: "return_status", title: "处理结果", width: 100, templet: function (d) {
+                        if (d.return_status == 4) {
+                            return '<button class="layui-btn layui-btn-xs">已退款</button>'
+                        }else if (d.return_status == 5) {
+                            return '<button class="layui-btn  layui-btn-warm layui-btn-xs">拒绝退款</button>'
+                        }
+                        // 返回模板内容
+                        return '<button class="layui-btn layui-btn-xs">处理中</button>'
+                    }
+                },
+            ]],
+            done: function (res, curr, count) {
+                console.log(res);
+            }
+        });
+
+    })
+</script>
+
+<script type="text/javascript">
+    okLoading.close();
+    // 基于准备好的dom，初始化echarts实例
+
+
+    var vm = new Vue({
+        el: '#vm',
+        data: {
+            xDataArr: [],
+            yDataArr1: [],
+            yDataArr2: []
+        },
+        methods: {
+
+            // 初始化图表
+            initGraph: function () {
+                var myChart = echarts.init(document.getElementById('main'));
+                // 指定图表的配置项和数据
+                var option = {
+                    title: {
+                        text: '交易趋势'
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        formatter: function (params) {
+                            return params[0].seriesName + ': ' + params[0].value;
+                        }
+                    },
+                    toolbox: {
+                        feature: {
+                            saveAsImage: {}, // 导出图片
+                            dataView: {}, // 数据视图
+                            restore: {}, // 重置
+                            dataZoom: {}, // 区域缩放
+
+                        }
+                    },
+                    legend: {
+                        data: ['订单量', '交易额'],
+                        selectedMode: 'single', // 设置为单选模式
+                    },
+                    xAxis: {
+                        type: 'category',
+                        data: vm.$data.xDataArr,
+                    },
+                    yAxis: {
+                        type: 'value',
+                    },
+                    series: [{
+                        name: '订单量',
+                        type: 'line',
+                        smooth: true, // 是否为平滑线
+                        data: vm.$data.yDataArr1,
+                        markPoint: { // 标记点
+                            data: [
+                                {
+                                    type: 'max'
+                                },
+                                {
+                                    type: 'min'
+                                }
+                            ]
+                        },
+                    }, {
+                        name: '交易额',
+                        type: 'line',
+                        data: this.yDataArr2,
+                        smooth: true, // 是否为平滑线
+                        markPoint: { // 标记点
+                            data: [
+                                {
+                                    type: 'max'
+                                },
+                                {
+                                    type: 'min'
+                                }
+                            ]
+                        },
+                    }
+                    ]
+                };
+                myChart.setOption(option);
+                myChart.on('rerender', function () {
+                    console.log('图表已重新渲染');
+                });
+            },
+
+            // 初始化图表
+            getInitGraph: function () {
+                $.ajax({
+                    url: '../../../admin/graph.action?op=getInitOrderGraph', // 请求的URL
+                    type: 'get', // 请求类型为GET
+                    dataType: 'json', // 期望服务器返回JSON格式的数据
+                    success: function (response) {
+                        if (response.code == 1) {
+                            // 横轴数据
+                            vm.$data.xDataArr = response.obj[0];
+                            // 纵轴数据
+                            vm.$data.yDataArr1 = response.obj[1];
+                            vm.$data.yDataArr2 = response.obj[2];
+                            vm.initGraph();
+
+                        }
+                        console.log('请求成功，返回的数据是：', response);
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error('请求失败，错误信息：', textStatus, errorThrown);
+                    }
+                })
+            },
+            // 点击查询按钮，获取查询条件，并重新渲染图表
+
+
+        },
+        mounted: function () {
+            this.getInitGraph();
+        }
+    })
+
+
+</script>
+<!-- 头工具栏模板 -->
+<script type="text/html" id="toolbarTpl">
+</script>
+
+<script type="text/html" id="statusTpl">
+    {{#  if(d.status == 1){ }}
+    <span class="layui-btn layui-btn-normal layui-btn-xs">未付款 </span>
+    {{#  } else if(d.status == 2) { }}
+    <span class="layui-btn layui-btn-danger layui-btn-xs">已支付_待发货 </span>
+    {{#  } else if(d.status == 3) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">已发货</span>
+    {{#  } else if(d.status == 4) { }}
+    <span class="layui-btn layui-btn-warm layui-btn-xs">已完成</span>
+    {{#  } }}
+</script>
+
+</body>
+</html>
